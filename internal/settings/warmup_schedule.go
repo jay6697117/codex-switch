@@ -69,6 +69,14 @@ func (s *WarmupScheduleService) LoadStatus(
 	ctx context.Context,
 	sessionStartedAt time.Time,
 ) (contracts.WarmupScheduleStatus, error) {
+	return s.LoadStatusAt(ctx, sessionStartedAt, s.now())
+}
+
+func (s *WarmupScheduleService) LoadStatusAt(
+	ctx context.Context,
+	sessionStartedAt time.Time,
+	now time.Time,
+) (contracts.WarmupScheduleStatus, error) {
 	schedule, err := s.loadAndSanitize(ctx)
 	if err != nil {
 		return contracts.WarmupScheduleStatus{}, err
@@ -79,7 +87,7 @@ func (s *WarmupScheduleService) LoadStatus(
 		}, nil
 	}
 
-	now := s.now().In(sessionStartedAt.Location())
+	now = now.In(sessionStartedAt.Location())
 	validAccountIDs, err := s.validAccountIDs(ctx, schedule.AccountIDs)
 	if err != nil {
 		return contracts.WarmupScheduleStatus{}, contracts.AppError{Code: "warmup.schedule_load_failed"}

@@ -173,6 +173,38 @@ func TestServiceWarmupAllAccountsAggregatesSummary(t *testing.T) {
 	require.Equal(t, "warmup.unsupported_auth_kind", dereferenceWarmup(result.Items[3].Availability.ReasonCode))
 }
 
+func TestServiceWarmupAccountsUsesSelectedIDsInRequestedOrder(t *testing.T) {
+	t.Parallel()
+
+	repository := &fakeWarmupRepository{
+		store: accounts.AccountsStore{
+			Version: 1,
+			Accounts: []accounts.AccountRecord{
+				chatGPTWarmupAccount("acct-chatgpt", "Work Account", "access-current", "refresh-current", "acct-openai"),
+				apiKeyWarmupAccount("acct-api", "API Account", "sk-live"),
+				apiKeyWarmupAccount("acct-missing-key", "Missing Key", ""),
+			},
+		},
+	}
+	provider := &fakeProvider{}
+	tokens := &fakeWarmupTokenManager{
+		ensureFreshResult: chatGPTWarmupAccount("acct-chatgpt", "Work Account", "access-current", "refresh-current", "acct-openai"),
+	}
+	service := NewService(repository, tokens, provider)
+
+	result, err := service.WarmupAccounts(context.Background(), []string{"acct-api", "acct-chatgpt"})
+
+	require.NoError(t, err)
+	require.Len(t, result.Items, 2)
+	require.Equal(t, "acct-api", result.Items[0].AccountID)
+	require.Equal(t, "acct-chatgpt", result.Items[1].AccountID)
+	require.Equal(t, 2, result.Summary.TotalAccounts)
+	require.Equal(t, 2, result.Summary.EligibleAccounts)
+	require.Equal(t, 2, result.Summary.SuccessfulAccounts)
+	require.Len(t, provider.apiKeyRequests, 1)
+	require.Len(t, provider.chatGPTRequests, 1)
+}
+
 type fakeWarmupRepository struct {
 	store accounts.AccountsStore
 }

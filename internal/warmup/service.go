@@ -136,12 +136,29 @@ func (s *Service) WarmupAllAccounts(ctx context.Context) (WarmupAllResult, error
 		return WarmupAllResult{}, contracts.AppError{Code: "warmup.load_failed"}
 	}
 
-	items := make([]AccountWarmupResult, 0, len(store.Accounts))
-	summary := WarmupSummary{
-		TotalAccounts: len(store.Accounts),
+	return s.warmupAccounts(ctx, store.Accounts), nil
+}
+
+func (s *Service) WarmupAccounts(ctx context.Context, accountIDs []string) (WarmupAllResult, error) {
+	store, err := s.repository.Load(ctx)
+	if err != nil {
+		return WarmupAllResult{}, contracts.AppError{Code: "warmup.load_failed"}
 	}
 
-	for _, account := range store.Accounts {
+	selectedAccounts := selectAccountsByID(store, accountIDs)
+	return s.warmupAccounts(ctx, selectedAccounts), nil
+}
+
+func (s *Service) warmupAccounts(
+	ctx context.Context,
+	selectedAccounts []accounts.AccountRecord,
+) WarmupAllResult {
+	items := make([]AccountWarmupResult, 0, len(selectedAccounts))
+	summary := WarmupSummary{
+		TotalAccounts: len(selectedAccounts),
+	}
+
+	for _, account := range selectedAccounts {
 		result := s.warmupLoadedAccount(ctx, account)
 		items = append(items, result)
 
@@ -162,7 +179,7 @@ func (s *Service) WarmupAllAccounts(ctx context.Context) (WarmupAllResult, error
 	return WarmupAllResult{
 		Items:   items,
 		Summary: summary,
-	}, nil
+	}
 }
 
 func (s *Service) warmupLoadedAccount(
@@ -261,6 +278,37 @@ func (s *Service) prepareChatGPTAccount(
 	}
 
 	return readyAccount, nil
+}
+
+func selectAccountsByID(
+	store accounts.AccountsStore,
+	accountIDs []string,
+) []accounts.AccountRecord {
+	if len(accountIDs) == 0 {
+		return []accounts.AccountRecord{}
+	}
+
+	accountsByID := make(map[string]accounts.AccountRecord, len(store.Accounts))
+	for _, account := range store.Accounts {
+		accountsByID[account.ID] = account
+	}
+
+	seen := make(map[string]struct{}, len(accountIDs))
+	selected := make([]accounts.AccountRecord, 0, len(accountIDs))
+	for _, accountID := range accountIDs {
+		if _, ok := seen[accountID]; ok {
+			continue
+		}
+		account, ok := accountsByID[accountID]
+		if !ok {
+			continue
+		}
+
+		seen[accountID] = struct{}{}
+		selected = append(selected, account)
+	}
+
+	return selected
 }
 
 func availabilityForAccount(account accounts.AccountRecord) Availability {

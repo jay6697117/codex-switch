@@ -10,10 +10,13 @@ import (
 	"codex-switch/internal/contracts"
 	platformlocale "codex-switch/internal/platform/locale"
 	platformprocess "codex-switch/internal/platform/process"
+	"codex-switch/internal/scheduler"
 	"codex-switch/internal/settings"
 	"codex-switch/internal/switching"
 	"codex-switch/internal/usage"
 	"codex-switch/internal/warmup"
+
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type App struct {
@@ -25,6 +28,8 @@ type App struct {
 	switchService    *switching.Service
 	usageService     *usage.Service
 	warmupService    *warmup.Service
+	scheduleService  *settings.WarmupScheduleService
+	schedulerRuntime *scheduler.Runtime
 }
 
 func NewApp() *App {
@@ -34,6 +39,27 @@ func NewApp() *App {
 		repository,
 		authStore,
 		auth.DefaultHTTPRefreshExchanger(),
+	)
+	warmupService := warmup.NewService(
+		repository,
+		tokenService,
+		warmup.DefaultHTTPProvider(),
+	)
+	scheduleService := settings.NewWarmupScheduleService(
+		settings.DefaultStore(),
+		repository,
+	)
+	schedulerRuntime := scheduler.NewRuntime(
+		scheduleService,
+		scheduler.NewWarmupServiceRunner(warmupService),
+		scheduler.FuncEventSink(func(ctx context.Context, event contracts.WarmupRuntimeEvent) error {
+			if ctx == nil {
+				return nil
+			}
+
+			wailsruntime.EventsEmit(ctx, contracts.WarmupRuntimeEventName, event)
+			return nil
+		}),
 	)
 
 	return &App{
@@ -58,16 +84,17 @@ func NewApp() *App {
 			tokenService,
 			usage.DefaultHTTPFetcher(),
 		),
-		warmupService: warmup.NewService(
-			repository,
-			tokenService,
-			warmup.DefaultHTTPProvider(),
-		),
+		warmupService:    warmupService,
+		scheduleService:  scheduleService,
+		schedulerRuntime: schedulerRuntime,
 	}
 }
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	if a.schedulerRuntime != nil {
+		a.schedulerRuntime.Start(ctx)
+	}
 }
 
 func (a *App) LoadBootstrap() (contracts.BootstrapPayload, error) {
