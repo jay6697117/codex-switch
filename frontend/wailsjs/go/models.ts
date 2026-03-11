@@ -134,6 +134,34 @@ export namespace contracts {
 		    return a;
 		}
 	}
+	export class OAuthCancelResult {
+	    pending: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new OAuthCancelResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.pending = source["pending"];
+	    }
+	}
+	export class OAuthLoginInfo {
+	    authUrl: string;
+	    callbackPort: number;
+	    pending: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new OAuthLoginInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.authUrl = source["authUrl"];
+	        this.callbackPort = source["callbackPort"];
+	        this.pending = source["pending"];
+	    }
+	}
 	export class ProcessStatus {
 	    foregroundCount: number;
 	    backgroundCount: number;
@@ -176,6 +204,74 @@ export namespace contracts {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.data = this.convertValues(source["data"], AccountsSnapshot);
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ResultEnvelope_codex_switch_internal_contracts_OAuthCancelResult_ {
+	    data?: OAuthCancelResult;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_codex_switch_internal_contracts_OAuthCancelResult_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = this.convertValues(source["data"], OAuthCancelResult);
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ResultEnvelope_codex_switch_internal_contracts_OAuthLoginInfo_ {
+	    data?: OAuthLoginInfo;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_codex_switch_internal_contracts_OAuthLoginInfo_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = this.convertValues(source["data"], OAuthLoginInfo);
 	        this.message = this.convertValues(source["message"], AppMessage);
 	        this.error = this.convertValues(source["error"], AppError);
 	    }
@@ -297,6 +393,18 @@ export namespace contracts {
 		    }
 		    return a;
 		}
+	}
+	export class StartOAuthLoginInput {
+	    accountName: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new StartOAuthLoginInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountName = source["accountName"];
+	    }
 	}
 	export class SwitchAccountInput {
 	    accountId: string;

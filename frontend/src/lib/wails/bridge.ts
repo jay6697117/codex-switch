@@ -3,9 +3,12 @@ import type {
   AppError,
   BootstrapPayload,
   EventEnvelope,
+  OAuthCancelResult,
+  OAuthLoginInfo,
   ProcessStatus,
   RenameAccountInput,
   ResultEnvelope,
+  StartOAuthLoginInput,
   SwitchAccountInput,
   SwitchAccountResult,
 } from "../contracts";
@@ -107,6 +110,38 @@ export async function switchAccountViaWails(
   }
 
   return unwrapEnvelope(await switchAccount(input), "switch.active_update_failed");
+}
+
+export async function startOAuthLoginViaWails(
+  input: StartOAuthLoginInput,
+): Promise<OAuthLoginInfo> {
+  const startOAuthLogin = window.go?.main?.App?.StartOAuthLogin;
+
+  if (!startOAuthLogin) {
+    throw { code: "oauth.start_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await startOAuthLogin(input), "oauth.start_failed");
+}
+
+export async function completeOAuthLoginViaWails(): Promise<AccountsSnapshot> {
+  const completeOAuthLogin = window.go?.main?.App?.CompleteOAuthLogin;
+
+  if (!completeOAuthLogin) {
+    throw { code: "oauth.complete_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await completeOAuthLogin(), "oauth.complete_failed");
+}
+
+export async function cancelOAuthLoginViaWails(): Promise<OAuthCancelResult> {
+  const cancelOAuthLogin = window.go?.main?.App?.CancelOAuthLogin;
+
+  if (!cancelOAuthLogin) {
+    throw { code: "oauth.cancel_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await cancelOAuthLogin(), "oauth.cancel_failed");
 }
 
 export function subscribeToRuntimeEvent<T>(

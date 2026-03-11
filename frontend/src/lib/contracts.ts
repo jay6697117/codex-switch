@@ -24,6 +24,20 @@ export interface BootstrapPayload {
   app: AppInfo;
 }
 
+export interface StartOAuthLoginInput {
+  accountName: string;
+}
+
+export interface OAuthLoginInfo {
+  authUrl: string;
+  callbackPort: number;
+  pending: boolean;
+}
+
+export interface OAuthCancelResult {
+  pending: boolean;
+}
+
 export interface RenameAccountInput {
   id: string;
   displayName: string;

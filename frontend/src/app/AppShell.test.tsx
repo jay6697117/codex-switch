@@ -36,6 +36,11 @@ describe("AppShell", () => {
           canSwitch: true,
         }),
       },
+      oauth: {
+        start: vi.fn(),
+        complete: vi.fn(),
+        cancel: vi.fn(),
+      },
     };
 
     render(<AppShell i18n={i18n} services={services} />);

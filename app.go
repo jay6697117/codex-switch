@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"codex-switch/internal/accounts"
+	"codex-switch/internal/auth"
 	"codex-switch/internal/bootstrap"
 	"codex-switch/internal/contracts"
 	platformlocale "codex-switch/internal/platform/locale"
@@ -17,19 +18,28 @@ type App struct {
 	ctx              context.Context
 	bootstrapService *bootstrap.Service
 	accountService   *accounts.Service
+	authService      *auth.Service
 	switchService    *switching.Service
 }
 
 func NewApp() *App {
+	repository := accounts.DefaultFileRepository()
+	authStore := switching.DefaultFileAuthStore()
+
 	return &App{
 		bootstrapService: bootstrap.NewService(
 			settings.DefaultStore(),
 			platformlocale.NewDetector(),
 		),
-		accountService: accounts.NewService(accounts.DefaultFileRepository()),
+		accountService: accounts.NewService(repository),
+		authService: auth.NewService(
+			repository,
+			authStore,
+			auth.DefaultLocalStarter(),
+		),
 		switchService: switching.NewService(
-			accounts.DefaultFileRepository(),
-			switching.DefaultFileAuthStore(),
+			repository,
+			authStore,
 			platformprocess.NewOSController(),
 		),
 	}
@@ -70,6 +80,21 @@ func (a *App) GetProcessStatus() contracts.ResultEnvelope[contracts.ProcessStatu
 func (a *App) SwitchAccount(input contracts.SwitchAccountInput) contracts.ResultEnvelope[contracts.SwitchAccountResult] {
 	result, err := a.switchService.SwitchAccount(a.requestContext(), input)
 	return wrapResult(result, err, "switch.active_update_failed")
+}
+
+func (a *App) StartOAuthLogin(input contracts.StartOAuthLoginInput) contracts.ResultEnvelope[contracts.OAuthLoginInfo] {
+	info, err := a.authService.StartLogin(a.requestContext(), input.AccountName)
+	return wrapResult(info, err, "oauth.start_failed")
+}
+
+func (a *App) CompleteOAuthLogin() contracts.ResultEnvelope[contracts.AccountsSnapshot] {
+	snapshot, err := a.authService.CompleteLogin(a.requestContext())
+	return wrapResult(snapshot, err, "oauth.complete_failed")
+}
+
+func (a *App) CancelOAuthLogin() contracts.ResultEnvelope[contracts.OAuthCancelResult] {
+	err := a.authService.CancelLogin(a.requestContext())
+	return wrapResult(contracts.OAuthCancelResult{Pending: false}, err, "oauth.cancel_failed")
 }
 
 func (a *App) requestContext() context.Context {
