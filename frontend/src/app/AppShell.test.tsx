@@ -20,12 +20,31 @@ describe("AppShell", () => {
           },
         }),
       },
+      accounts: {
+        load: vi.fn().mockResolvedValue({
+          activeAccountId: null,
+          accounts: [],
+        }),
+        rename: vi.fn(),
+        remove: vi.fn(),
+        switch: vi.fn(),
+      },
+      process: {
+        getStatus: vi.fn().mockResolvedValue({
+          foregroundCount: 0,
+          backgroundCount: 0,
+          canSwitch: true,
+        }),
+      },
     };
 
     render(<AppShell i18n={i18n} services={services} />);
 
     expect(await screen.findByText("Codex Switcher")).toBeInTheDocument();
     expect(await screen.findByText("多账号管理器骨架")).toBeInTheDocument();
+    expect(await screen.findByText("账号基础")).toBeInTheDocument();
+    expect(await screen.findByText("还没有账号")).toBeInTheDocument();
     expect(services.bootstrap.load).toHaveBeenCalledTimes(1);
+    expect(services.accounts.load).toHaveBeenCalledTimes(1);
   });
 });

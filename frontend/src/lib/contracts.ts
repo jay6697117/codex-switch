@@ -24,6 +24,42 @@ export interface BootstrapPayload {
   app: AppInfo;
 }
 
+export interface RenameAccountInput {
+  id: string;
+  displayName: string;
+}
+
+export interface AccountSummary {
+  id: string;
+  displayName: string;
+  email?: string;
+  authKind: string;
+  createdAt: string;
+  updatedAt: string;
+  lastUsedAt?: string;
+}
+
+export interface AccountsSnapshot {
+  activeAccountId: string | null;
+  accounts: AccountSummary[];
+}
+
+export interface ProcessStatus {
+  foregroundCount: number;
+  backgroundCount: number;
+  canSwitch: boolean;
+}
+
+export interface SwitchAccountInput {
+  accountId: string;
+  confirmRestart: boolean;
+}
+
+export interface SwitchAccountResult {
+  accounts: AccountsSnapshot;
+  restartPerformed: boolean;
+}
+
 export interface EventEnvelope<T = unknown> {
   name: string;
   message?: AppMessage;

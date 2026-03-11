@@ -10,7 +10,7 @@
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Foundation and Locale Bootstrap** - 建立 Wails 工程骨架、前后端契约和双语基础设施
+- [x] **Phase 1: Foundation and Locale Bootstrap** - 建立 Wails 工程骨架、前后端契约和双语基础设施
 - [ ] **Phase 2: Accounts and Safe Switching** - 落地本地账号仓库、进程检测和安全切换事务
 - [ ] **Phase 3: OAuth and Usage Visibility** - 完成 OAuth 添加账号、token refresh 与 usage 可视化
 - [ ] **Phase 4: Warmup Automation** - 迁移单账号/全量 warm-up、定时调度和错过补跑
@@ -31,10 +31,10 @@
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: Scaffold the Wails project, root wiring, and feature-first frontend directory layout
-- [ ] 01-02: Define shared DTOs, event payloads, and frontend app-service facades
-- [ ] 01-03: Bootstrap i18n resources, locale detection, and translation loading
-- [ ] 01-04: Add baseline Go/frontend test tooling and CI checks for the new skeleton
+- [x] 01-01: Scaffold the Wails project, root wiring, and feature-first frontend directory layout
+- [x] 01-02: Define shared DTOs, event payloads, and frontend app-service facades
+- [x] 01-03: Bootstrap i18n resources, locale detection, and translation loading
+- [x] 01-04: Add baseline Go/frontend test tooling and CI checks for the new skeleton
 
 ### Phase 2: Accounts and Safe Switching
 **Goal**: 迁移本地账号存储、账户管理界面、进程检测和 `auth.json` 安全切换事务。  
@@ -48,8 +48,8 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: Implement account repository, settings primitives, and account CRUD use cases
-- [ ] 02-02: Implement process detection, switch transaction, and auth.json writer adapters
+- [x] 02-01: Implement account repository, settings primitives, and account CRUD use cases
+- [x] 02-02: Implement process detection, switch transaction, and auth.json writer adapters
 - [ ] 02-03: Build account list, account card, and switch confirmation flows in the new frontend
 
 ### Phase 3: OAuth and Usage Visibility
@@ -123,8 +123,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Locale Bootstrap | 0/4 | Not started | - |
-| 2. Accounts and Safe Switching | 0/3 | Not started | - |
+| 1. Foundation and Locale Bootstrap | 4/4 | Complete | 2026-03-11 |
+| 2. Accounts and Safe Switching | 2/3 | In progress | - |
 | 3. OAuth and Usage Visibility | 0/3 | Not started | - |
 | 4. Warmup Automation | 0/3 | Not started | - |
 | 5. Backup and Preference Management | 0/3 | Not started | - |

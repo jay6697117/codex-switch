@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import type { i18n } from "i18next";
 
-import type { BootstrapPayload } from "../lib/contracts";
+import type { AccountsSnapshot, BootstrapPayload } from "../lib/contracts";
 import type { AppServices } from "../lib/wails/services";
 import { applyBootstrapLocale } from "../i18n/createAppI18n";
+import { AccountSection } from "../features/accounts/AccountSection";
 import { CapabilityGrid } from "../features/shell/CapabilityGrid";
 import { ShellHero } from "../features/shell/ShellHero";
 
@@ -20,6 +21,7 @@ interface AppShellContentProps {
 
 function AppShellContent({ i18n, services }: AppShellContentProps) {
   const [bootstrap, setBootstrap] = useState<BootstrapPayload | null>(null);
+  const [accountsSnapshot, setAccountsSnapshot] = useState<AccountsSnapshot | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const { t } = useTranslation(["errors"]);
 
@@ -34,12 +36,26 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
           return;
         }
         setBootstrap(payload);
-        setErrorCode(null);
       } catch {
         if (!active) {
           return;
         }
         setErrorCode("errors:bootstrapFailed");
+        return;
+      }
+
+      try {
+        const accounts = await services.accounts.load();
+        if (!active) {
+          return;
+        }
+        setAccountsSnapshot(accounts);
+        setErrorCode(null);
+      } catch {
+        if (!active) {
+          return;
+        }
+        setErrorCode("errors:accountLoadFailed");
       }
     };
 
@@ -58,7 +74,7 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
     );
   }
 
-  if (!bootstrap) {
+  if (!bootstrap || !accountsSnapshot) {
     return (
       <main className="app-shell">
         <section className="loading-panel">Loading foundation...</section>
@@ -69,6 +85,7 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
   return (
     <main className="app-shell">
       <ShellHero bootstrap={bootstrap} />
+      <AccountSection snapshot={accountsSnapshot} />
       <CapabilityGrid />
     </main>
   );

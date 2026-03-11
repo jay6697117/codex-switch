@@ -115,6 +115,74 @@ body {
   margin-top: 24px;
 }
 
+.accounts-empty-state,
+.accounts-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.accounts-empty-state strong,
+.accounts-group h3,
+.account-row strong {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.accounts-toolbar,
+.account-row,
+.account-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.accounts-toolbar {
+  margin-bottom: 8px;
+  color: var(--ink-soft);
+}
+
+.account-row {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.account-row p,
+.accounts-group p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.account-row-actions {
+  justify-content: flex-end;
+}
+
+.account-visibility {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--warm);
+}
+
+.secondary-button {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink-strong);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: rgba(15, 118, 110, 0.08);
+}
+
 .module-grid-header {
   display: flex;
   justify-content: space-between;

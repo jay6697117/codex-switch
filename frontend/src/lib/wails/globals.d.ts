@@ -1,4 +1,13 @@
-import type { BootstrapPayload, EventEnvelope } from "../contracts";
+import type {
+  AccountsSnapshot,
+  BootstrapPayload,
+  EventEnvelope,
+  ProcessStatus,
+  RenameAccountInput,
+  ResultEnvelope,
+  SwitchAccountInput,
+  SwitchAccountResult,
+} from "../contracts";
 
 declare global {
   interface Window {
@@ -6,6 +15,17 @@ declare global {
       main?: {
         App?: {
           LoadBootstrap?: () => Promise<BootstrapPayload>;
+          LoadAccounts?: () => Promise<ResultEnvelope<AccountsSnapshot>>;
+          GetProcessStatus?: () => Promise<ResultEnvelope<ProcessStatus>>;
+          RenameAccount?: (
+            input: RenameAccountInput,
+          ) => Promise<ResultEnvelope<AccountsSnapshot>>;
+          DeleteAccount?: (
+            accountId: string,
+          ) => Promise<ResultEnvelope<AccountsSnapshot>>;
+          SwitchAccount?: (
+            input: SwitchAccountInput,
+          ) => Promise<ResultEnvelope<SwitchAccountResult>>;
         };
       };
     };

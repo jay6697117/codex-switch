@@ -1,0 +1,15 @@
+export const accounts = {
+  title: "账号基础",
+  emptyTitle: "还没有账号",
+  emptyBody: "Phase 2 先把新本地账号仓库打通，添加账号和切换流程会在后续计划里继续落地。",
+  count: "已加载 {{count}} 个账号",
+  activeTitle: "当前账号",
+  othersTitle: "其他账号",
+  othersEmpty: "暂时没有其他账号。",
+  visibilityVisible: "已显示",
+  visibilityHidden: "已隐藏",
+  hideAll: "全部隐藏",
+  showAll: "全部显示",
+  hideOne: "隐藏",
+  showOne: "显示",
+};
