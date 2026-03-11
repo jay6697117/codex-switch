@@ -78,43 +78,43 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ACCT-01 | TBD | Pending |
-| ACCT-02 | TBD | Pending |
-| ACCT-03 | TBD | Pending |
-| ACCT-04 | TBD | Pending |
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| AUTH-04 | TBD | Pending |
-| AUTH-05 | TBD | Pending |
-| USAGE-01 | TBD | Pending |
-| USAGE-02 | TBD | Pending |
-| USAGE-03 | TBD | Pending |
-| USAGE-04 | TBD | Pending |
-| USAGE-05 | TBD | Pending |
-| WARM-01 | TBD | Pending |
-| WARM-02 | TBD | Pending |
-| WARM-03 | TBD | Pending |
-| WARM-04 | TBD | Pending |
-| WARM-05 | TBD | Pending |
-| BACK-01 | TBD | Pending |
-| BACK-02 | TBD | Pending |
-| BACK-03 | TBD | Pending |
-| BACK-04 | TBD | Pending |
-| BACK-05 | TBD | Pending |
-| I18N-01 | TBD | Pending |
-| I18N-02 | TBD | Pending |
-| I18N-03 | TBD | Pending |
-| I18N-04 | TBD | Pending |
-| I18N-05 | TBD | Pending |
-| QUAL-01 | TBD | Pending |
-| QUAL-02 | TBD | Pending |
+| ACCT-01 | Phase 2 | Pending |
+| ACCT-02 | Phase 2 | Pending |
+| ACCT-03 | Phase 2 | Pending |
+| ACCT-04 | Phase 2 | Pending |
+| AUTH-01 | Phase 3 | Pending |
+| AUTH-02 | Phase 3 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| AUTH-05 | Phase 6 | Pending |
+| USAGE-01 | Phase 3 | Pending |
+| USAGE-02 | Phase 3 | Pending |
+| USAGE-03 | Phase 3 | Pending |
+| USAGE-04 | Phase 3 | Pending |
+| USAGE-05 | Phase 2 | Pending |
+| WARM-01 | Phase 4 | Pending |
+| WARM-02 | Phase 4 | Pending |
+| WARM-03 | Phase 4 | Pending |
+| WARM-04 | Phase 4 | Pending |
+| WARM-05 | Phase 4 | Pending |
+| BACK-01 | Phase 5 | Pending |
+| BACK-02 | Phase 5 | Pending |
+| BACK-03 | Phase 5 | Pending |
+| BACK-04 | Phase 5 | Pending |
+| BACK-05 | Phase 5 | Pending |
+| I18N-01 | Phase 1 | Pending |
+| I18N-02 | Phase 6 | Pending |
+| I18N-03 | Phase 1 | Pending |
+| I18N-04 | Phase 5 | Pending |
+| I18N-05 | Phase 6 | Pending |
+| QUAL-01 | Phase 6 | Pending |
+| QUAL-02 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 31 total
-- Mapped to phases: 0
-- Unmapped: 31 ⚠️
+- Mapped to phases: 31
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-11*
-*Last updated: 2026-03-11 after initial definition*
+*Last updated: 2026-03-11 after roadmap creation*
