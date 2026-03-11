@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** 本地、安全、可预期地管理和切换多个 Codex 账号，同时把原项目的隐式桌面行为抽成清晰、可测试、可国际化的前后端契约
-**Current focus:** Phase 2 - Accounts and Safe Switching
+**Current focus:** Phase 3 - OAuth and Usage Visibility
 
 ## Current Position
 
-Phase: 2 of 6 (Accounts and Safe Switching)
-Plan: 3 of 3 in current phase
-Status: 02-01 and 02-02 completed, 02-03 implementation in progress
-Last activity: 2026-03-11 — Implemented account repository + safe switch foundations and prepared the UI integration pass for 02-03
+Phase: 3 of 6 (OAuth and Usage Visibility)
+Plan: 0 of 3 in current phase
+Status: Phase 2 complete, next step is planning Phase 3
+Last activity: 2026-03-11 — Completed Phase 2 account shell, safe-switch confirmation UI, and full verification loop
 
-Progress: [███░░░░░░░] 32%
+Progress: [████░░░░░░] 37%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: n/a
 - Total execution time: n/a
 
@@ -28,10 +28,10 @@ Progress: [███░░░░░░░] 32%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 4 | n/a | n/a |
-| 2 | 2 | n/a | n/a |
+| 2 | 3 | n/a | n/a |
 
 **Recent Trend:**
-- Last 5 plans: 01-02, 01-03, 01-04, 02-01, 02-02
+- Last 5 plans: 01-03, 01-04, 02-01, 02-02, 02-03
 - Trend: Rising
 
 ## Accumulated Context
@@ -48,19 +48,20 @@ Recent decisions affecting current work:
 - [Phase 2]: Switching while Codex is running requires explicit confirmation and graceful restart handling
 - [Phase 2]: Account name/email stay visible by default, with per-account and global masking controls
 - [Phase 2]: Account switching rewrites `auth.json` canonically and rolls back on synchronous failure
+- [Phase 2]: The Wails shell hosts account cards and blocks switch actions behind a first-class confirmation dialog
 
 ### Pending Todos
 
-- Phase 2 / 02-03: Build account cards, inline rename, delete confirmation, and switch confirmation UI
+- Plan Phase 3 around OAuth callback boundaries, token refresh, and usage normalization contracts
 
 ### Blockers/Concerns
 
 - Backup compatibility with old origin exports must be decided before Phase 5 implementation starts
-- Phase 1 was implemented directly in code and verified, but GSD phase summaries were not backfilled
-- Phase 2 needs local account store and switch transaction boundaries to stay isolated from future OAuth/usage work
+- OAuth callback ownership and local callback-server lifecycle need an explicit Phase 3 design pass
+- Usage refresh semantics still need a single normalized contract before UI work begins
 
 ## Session Continuity
 
-Last session: 2026-03-11 16:10 CST
-Stopped at: Phase 2 foundations committed locally; next step is 02-03 frontend shell integration
+Last session: 2026-03-11 17:33 CST
+Stopped at: Phase 2 completed and verified; next step is planning Phase 3
 Resume file: None

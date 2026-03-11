@@ -7,4 +7,11 @@ export const errors = {
   "account.name_required": "Account name is required.",
   "account.name_conflict": "Another account already uses that name.",
   "account.not_found": "The requested account could not be found.",
+  "process.detect_failed": "Unable to inspect the current Codex process state.",
+  "switch.confirmation_required": "Codex is running. Confirm the restart before switching.",
+  "switch.account_not_found": "The account selected for switching no longer exists.",
+  "switch.credentials_missing": "This account does not have usable credentials yet.",
+  "switch.auth_write_failed": "Unable to rewrite auth.json for the selected account.",
+  "switch.active_update_failed": "Unable to finish the account switch transaction.",
+  "switch.rollback_failed": "The switch failed and the rollback could not complete cleanly.",
 };

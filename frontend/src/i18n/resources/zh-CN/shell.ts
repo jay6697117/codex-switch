@@ -1,5 +1,6 @@
 export const shell = {
   title: "Codex Switcher",
+  loading: "正在加载基础壳层...",
   subtitle: "多账号管理器骨架",
   eyebrow: "基础骨架与语言启动",
   readiness: "Wails 壳层、契约层和双语启动链路已经就位。",

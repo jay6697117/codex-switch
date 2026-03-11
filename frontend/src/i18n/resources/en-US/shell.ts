@@ -1,5 +1,6 @@
 export const shell = {
   title: "Codex Switcher",
+  loading: "Loading foundation...",
   subtitle: "Multi-account manager skeleton",
   eyebrow: "Foundation and Locale Bootstrap",
   readiness: "Wails shell, contracts, and dual-language bootstrap are ready.",

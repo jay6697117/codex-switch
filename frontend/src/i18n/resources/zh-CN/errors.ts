@@ -7,4 +7,11 @@ export const errors = {
   "account.name_required": "账号名称不能为空。",
   "account.name_conflict": "已有账号使用相同名称。",
   "account.not_found": "未找到对应账号。",
+  "process.detect_failed": "无法检查当前 Codex 进程状态。",
+  "switch.confirmation_required": "Codex 正在运行，切换前需要明确确认重启。",
+  "switch.account_not_found": "要切换的账号已不存在。",
+  "switch.credentials_missing": "该账号还没有可用凭据。",
+  "switch.auth_write_failed": "无法为目标账号重写 auth.json。",
+  "switch.active_update_failed": "账号切换事务未能完成。",
+  "switch.rollback_failed": "切换失败，且回滚没有完全成功。",
 };

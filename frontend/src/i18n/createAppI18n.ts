@@ -13,7 +13,7 @@ export async function createAppI18n(initialLocale: LocaleCode = "en-US"): Promis
     fallbackLng: "en-US",
     supportedLngs: [...supportedLocales],
     defaultNS: "shell",
-    ns: ["common", "errors", "shell"],
+    ns: ["accounts", "common", "errors", "shell"],
     resources,
     interpolation: {
       escapeValue: false,
