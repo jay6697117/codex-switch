@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 4 of 6 (Warmup Automation)
-Plan: 0 of 3 in current phase
-Status: Phase 3 delivered; ready to start warmup services, scheduler, and UI wiring
-Last activity: 2026-03-11 — Completed 03-03 with OAuth-only add-account shell integration and localized usage presentation
+Plan: 3 of 3 in current phase
+Status: Phase 4 planned; ready to execute 04-01 manual warm-up end-to-end
+Last activity: 2026-03-11 — Planned Phase 4 with research, validation, and 3 execution plans
 
 Progress: [██████░░░░] 58%
 
@@ -57,15 +57,15 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Plan 04-01: implement warmup adapters, single/all warmup execution, and typed service contracts
+- Execute 04-01: implement manual warm-up service adapters, typed contracts, and account-shell actions
 
 ### Blockers/Concerns
 
 - Backup compatibility with old origin exports must be decided before Phase 5 implementation starts
-- Warmup scheduling still needs a clear policy for catch-up, retry bounds, and foreground feedback in Phase 4
+- Phase 4 execution must validate DST/local-clock edge cases and packaged Wails runtime-event delivery called out in `04-VALIDATION.md`
 
 ## Session Continuity
 
 Last session: 2026-03-11 23:00 CST
-Stopped at: 03-03 implementation complete and verified
+Stopped at: Phase 4 planning complete; next action is 04-01 execution
 Resume file: None
