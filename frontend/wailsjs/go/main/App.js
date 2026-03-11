@@ -45,3 +45,11 @@ export function StartOAuthLogin(arg1) {
 export function SwitchAccount(arg1) {
   return window['go']['main']['App']['SwitchAccount'](arg1);
 }
+
+export function WarmupAccount(arg1) {
+  return window['go']['main']['App']['WarmupAccount'](arg1);
+}
+
+export function WarmupAllAccounts() {
+  return window['go']['main']['App']['WarmupAllAccounts']();
+}

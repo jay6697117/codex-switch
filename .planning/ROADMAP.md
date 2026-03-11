@@ -80,7 +80,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: Implement warm-up service adapters and single/all warm-up flows
+- [x] 04-01: Implement warm-up service adapters and single/all warm-up flows
 - [ ] 04-02: Implement scheduler, local-time persistence, and missed-run recovery logic
 - [ ] 04-03: Implement warm-up events, UI configuration, and localized feedback flows
 
@@ -126,6 +126,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation and Locale Bootstrap | 4/4 | Complete | 2026-03-11 |
 | 2. Accounts and Safe Switching | 3/3 | Complete | 2026-03-11 |
 | 3. OAuth and Usage Visibility | 3/3 | Complete | 2026-03-11 |
-| 4. Warmup Automation | 0/3 | Not started | - |
+| 4. Warmup Automation | 1/3 | In Progress | - |
 | 5. Backup and Preference Management | 0/3 | Not started | - |
 | 6. Localization Completion and Release Readiness | 0/3 | Not started | - |

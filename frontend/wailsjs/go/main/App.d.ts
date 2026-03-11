@@ -23,3 +23,7 @@ export function RenameAccount(arg1:contracts.RenameAccountInput):Promise<contrac
 export function StartOAuthLogin(arg1:contracts.StartOAuthLoginInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_OAuthLoginInfo_>;
 
 export function SwitchAccount(arg1:contracts.SwitchAccountInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_SwitchAccountResult_>;
+
+export function WarmupAccount(arg1:string):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupAccountResult_>;
+
+export function WarmupAllAccounts():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupAllResult_>;

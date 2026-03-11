@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 4 of 6 (Warmup Automation)
-Plan: 3 of 3 in current phase
-Status: Phase 4 planned; ready to execute 04-01 manual warm-up end-to-end
-Last activity: 2026-03-11 — Planned Phase 4 with research, validation, and 3 execution plans
+Plan: 1 of 3 completed in current phase
+Status: Phase 4 in progress; 04-01 manual warm-up end-to-end completed, 04-02 scheduler plan ready to execute
+Last activity: 2026-03-12 — Executed 04-01 manual warm-up service, Wails contracts, and account-shell actions
 
-Progress: [██████░░░░] 58%
+Progress: [██████░░░░] 63%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: n/a
 - Total execution time: n/a
 
@@ -30,10 +30,10 @@ Progress: [██████░░░░] 58%
 | 1 | 4 | n/a | n/a |
 | 2 | 3 | n/a | n/a |
 | 3 | 3 | n/a | n/a |
-| 4 | 0 | n/a | n/a |
+| 4 | 1 | n/a | n/a |
 
 **Recent Trend:**
-- Last 5 plans: 02-02, 02-03, 03-01, 03-02, 03-03
+- Last 5 plans: 02-03, 03-01, 03-02, 03-03, 04-01
 - Trend: Steady
 
 ## Accumulated Context
@@ -54,10 +54,13 @@ Recent decisions affecting current work:
 - [Phase 3]: Add Account remains OAuth-only and continues to exclude `Import File`
 - [Phase 3]: Usage state is stored separately from account snapshots and refreshed explicitly per-account or globally
 - [Phase 3]: OAuth browser navigation is triggered through Wails runtime `BrowserOpenURL()`
+- [Phase 4]: Warm-up availability is attached to account snapshots so the client never infers provider rules
+- [Phase 4]: Manual warm-up results are normalized into per-account success/failed/skipped payloads instead of raw provider errors
+- [Phase 4]: Account shell keeps recent manual warm-up feedback local and does not mark scheduled completion state
 
 ### Pending Todos
 
-- Execute 04-01: implement manual warm-up service adapters, typed contracts, and account-shell actions
+- Execute 04-02: implement scheduler, local-time persistence, and missed-run recovery logic
 
 ### Blockers/Concerns
 
@@ -66,6 +69,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-03-11 23:00 CST
-Stopped at: Phase 4 planning complete; next action is 04-01 execution
+Last session: 2026-03-12 01:08 CST
+Stopped at: 04-01 completed with summary written; next action is 04-02 execution
 Resume file: None
