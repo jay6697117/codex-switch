@@ -1,5 +1,6 @@
 import type {
   AccountsSnapshot,
+  AccountUsageSnapshot,
   BootstrapPayload,
   EventEnvelope,
   OAuthCancelResult,
@@ -9,14 +10,17 @@ import type {
   StartOAuthLoginInput,
   SwitchAccountInput,
   SwitchAccountResult,
+  UsageCollection,
 } from "../contracts";
 import {
   cancelOAuthLoginViaWails,
   completeOAuthLoginViaWails,
   deleteAccountViaWails,
+  getAccountUsageViaWails,
   loadAccountsViaWails,
   loadBootstrapViaWails,
   loadProcessStatusViaWails,
+  refreshAllUsageViaWails,
   renameAccountViaWails,
   startOAuthLoginViaWails,
   subscribeToRuntimeEvent,
@@ -51,11 +55,17 @@ export interface OAuthService {
   cancel(): Promise<OAuthCancelResult>;
 }
 
+export interface UsageService {
+  get(accountId: string): Promise<AccountUsageSnapshot>;
+  refreshAll(): Promise<UsageCollection>;
+}
+
 export interface AppServices {
   bootstrap: BootstrapService;
   accounts: AccountsService;
   process: ProcessService;
   oauth: OAuthService;
+  usage: UsageService;
   events?: RuntimeEventsService;
 }
 
@@ -77,6 +87,10 @@ export function createAppServices(): AppServices {
       start: startOAuthLoginViaWails,
       complete: completeOAuthLoginViaWails,
       cancel: cancelOAuthLoginViaWails,
+    },
+    usage: {
+      get: getAccountUsageViaWails,
+      refreshAll: refreshAllUsageViaWails,
     },
     events: {
       subscribe: subscribeToRuntimeEvent,

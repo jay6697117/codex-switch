@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 3 of 6 (OAuth and Usage Visibility)
-Plan: 2 of 3 in current phase
-Status: 03-01 delivered; ready to execute usage normalization and refresh logic
-Last activity: 2026-03-11 — Completed 03-01 with OAuth callback handling, pending-flow lifecycle, account creation, and typed Wails OAuth facades
+Plan: 3 of 3 in current phase
+Status: 03-02 delivered; ready to integrate OAuth and usage flows into the UI shell
+Last activity: 2026-03-11 — Completed 03-02 with usage normalization, refresh-aware token handling, and typed Wails usage facades
 
-Progress: [█████░░░░░] 42%
+Progress: [██████░░░░] 49%
 
 ## Performance Metrics
 
@@ -29,10 +29,10 @@ Progress: [█████░░░░░] 42%
 |-------|-------|-------|----------|
 | 1 | 4 | n/a | n/a |
 | 2 | 3 | n/a | n/a |
-| 3 | 1 | n/a | n/a |
+| 3 | 2 | n/a | n/a |
 
 **Recent Trend:**
-- Last 5 plans: 01-04, 02-01, 02-02, 02-03, 03-01
+- Last 5 plans: 02-01, 02-02, 02-03, 03-01, 03-02
 - Trend: Rising
 
 ## Accumulated Context
@@ -53,15 +53,15 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Execute 03-02: usage normalization, token refresh semantics, and bulk refresh contracts
+- Execute 03-03: integrate OAuth add-account UI and usage presentation into the shell
 
 ### Blockers/Concerns
 
 - Backup compatibility with old origin exports must be decided before Phase 5 implementation starts
-- Usage refresh semantics still need a single normalized contract before UI work begins
+- Usage UI still needs final shell integration and localized presentation in 03-03
 
 ## Session Continuity
 
-Last session: 2026-03-11 17:50 CST
-Stopped at: 03-01 implementation complete and verified
+Last session: 2026-03-11 18:08 CST
+Stopped at: 03-02 implementation complete and verified
 Resume file: None

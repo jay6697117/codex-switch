@@ -1,5 +1,6 @@
 import type {
   AccountsSnapshot,
+  AccountUsageSnapshot,
   BootstrapPayload,
   EventEnvelope,
   OAuthCancelResult,
@@ -10,6 +11,7 @@ import type {
   StartOAuthLoginInput,
   SwitchAccountInput,
   SwitchAccountResult,
+  UsageCollection,
 } from "../contracts";
 
 declare global {
@@ -19,7 +21,11 @@ declare global {
         App?: {
           LoadBootstrap?: () => Promise<BootstrapPayload>;
           LoadAccounts?: () => Promise<ResultEnvelope<AccountsSnapshot>>;
+          GetAccountUsage?: (
+            accountId: string,
+          ) => Promise<ResultEnvelope<AccountUsageSnapshot>>;
           GetProcessStatus?: () => Promise<ResultEnvelope<ProcessStatus>>;
+          RefreshAllUsage?: () => Promise<ResultEnvelope<UsageCollection>>;
           RenameAccount?: (
             input: RenameAccountInput,
           ) => Promise<ResultEnvelope<AccountsSnapshot>>;

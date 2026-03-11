@@ -12,6 +12,7 @@ import (
 	platformprocess "codex-switch/internal/platform/process"
 	"codex-switch/internal/settings"
 	"codex-switch/internal/switching"
+	"codex-switch/internal/usage"
 )
 
 type App struct {
@@ -19,12 +20,19 @@ type App struct {
 	bootstrapService *bootstrap.Service
 	accountService   *accounts.Service
 	authService      *auth.Service
+	tokenService     *auth.TokenService
 	switchService    *switching.Service
+	usageService     *usage.Service
 }
 
 func NewApp() *App {
 	repository := accounts.DefaultFileRepository()
 	authStore := switching.DefaultFileAuthStore()
+	tokenService := auth.NewTokenService(
+		repository,
+		authStore,
+		auth.DefaultHTTPRefreshExchanger(),
+	)
 
 	return &App{
 		bootstrapService: bootstrap.NewService(
@@ -37,10 +45,16 @@ func NewApp() *App {
 			authStore,
 			auth.DefaultLocalStarter(),
 		),
+		tokenService: tokenService,
 		switchService: switching.NewService(
 			repository,
 			authStore,
 			platformprocess.NewOSController(),
+		),
+		usageService: usage.NewService(
+			repository,
+			tokenService,
+			usage.DefaultHTTPFetcher(),
 		),
 	}
 }
@@ -95,6 +109,16 @@ func (a *App) CompleteOAuthLogin() contracts.ResultEnvelope[contracts.AccountsSn
 func (a *App) CancelOAuthLogin() contracts.ResultEnvelope[contracts.OAuthCancelResult] {
 	err := a.authService.CancelLogin(a.requestContext())
 	return wrapResult(contracts.OAuthCancelResult{Pending: false}, err, "oauth.cancel_failed")
+}
+
+func (a *App) GetAccountUsage(accountID string) contracts.ResultEnvelope[contracts.AccountUsageSnapshot] {
+	snapshot, err := a.usageService.GetAccountUsage(a.requestContext(), accountID)
+	return wrapResult(snapshot, err, "usage.load_failed")
+}
+
+func (a *App) RefreshAllUsage() contracts.ResultEnvelope[contracts.UsageCollection] {
+	result, err := a.usageService.RefreshAllUsage(a.requestContext())
+	return wrapResult(result, err, "usage.load_failed")
 }
 
 func (a *App) requestContext() context.Context {

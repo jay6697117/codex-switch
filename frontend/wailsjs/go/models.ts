@@ -24,6 +24,64 @@ export namespace contracts {
 	        this.lastUsedAt = source["lastUsedAt"];
 	    }
 	}
+	export class UsageWindowSnapshot {
+	    usedPercent?: number;
+	    windowMinutes: number;
+	    resetsAt?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UsageWindowSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.usedPercent = source["usedPercent"];
+	        this.windowMinutes = source["windowMinutes"];
+	        this.resetsAt = source["resetsAt"];
+	    }
+	}
+	export class AccountUsageSnapshot {
+	    accountId: string;
+	    planType?: string;
+	    status: string;
+	    reasonCode?: string;
+	    fiveHour?: UsageWindowSnapshot;
+	    weekly?: UsageWindowSnapshot;
+	    refreshedAt: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AccountUsageSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountId = source["accountId"];
+	        this.planType = source["planType"];
+	        this.status = source["status"];
+	        this.reasonCode = source["reasonCode"];
+	        this.fiveHour = this.convertValues(source["fiveHour"], UsageWindowSnapshot);
+	        this.weekly = this.convertValues(source["weekly"], UsageWindowSnapshot);
+	        this.refreshedAt = source["refreshedAt"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class AccountsSnapshot {
 	    activeAccountId?: string;
 	    accounts: AccountSummary[];
@@ -191,6 +249,40 @@ export namespace contracts {
 	        this.id = source["id"];
 	        this.displayName = source["displayName"];
 	    }
+	}
+	export class ResultEnvelope_codex_switch_internal_contracts_AccountUsageSnapshot_ {
+	    data?: AccountUsageSnapshot;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_codex_switch_internal_contracts_AccountUsageSnapshot_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = this.convertValues(source["data"], AccountUsageSnapshot);
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class ResultEnvelope_codex_switch_internal_contracts_AccountsSnapshot_ {
 	    data?: AccountsSnapshot;
@@ -394,6 +486,70 @@ export namespace contracts {
 		    return a;
 		}
 	}
+	export class UsageCollection {
+	    items: AccountUsageSnapshot[];
+	
+	    static createFrom(source: any = {}) {
+	        return new UsageCollection(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.items = this.convertValues(source["items"], AccountUsageSnapshot);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ResultEnvelope_codex_switch_internal_contracts_UsageCollection_ {
+	    data?: UsageCollection;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_codex_switch_internal_contracts_UsageCollection_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = this.convertValues(source["data"], UsageCollection);
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class StartOAuthLoginInput {
 	    accountName: string;
 	
@@ -420,6 +576,8 @@ export namespace contracts {
 	        this.confirmRestart = source["confirmRestart"];
 	    }
 	}
+	
+	
 
 }
 

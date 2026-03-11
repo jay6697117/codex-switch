@@ -41,6 +41,10 @@ describe("AppShell", () => {
         complete: vi.fn(),
         cancel: vi.fn(),
       },
+      usage: {
+        get: vi.fn(),
+        refreshAll: vi.fn(),
+      },
     };
 
     render(<AppShell i18n={i18n} services={services} />);

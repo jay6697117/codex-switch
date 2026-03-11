@@ -1,5 +1,6 @@
 import type {
   AccountsSnapshot,
+  AccountUsageSnapshot,
   AppError,
   BootstrapPayload,
   EventEnvelope,
@@ -11,6 +12,7 @@ import type {
   StartOAuthLoginInput,
   SwitchAccountInput,
   SwitchAccountResult,
+  UsageCollection,
 } from "../contracts";
 
 const fallbackBootstrapPayload: BootstrapPayload = {
@@ -142,6 +144,28 @@ export async function cancelOAuthLoginViaWails(): Promise<OAuthCancelResult> {
   }
 
   return unwrapEnvelope(await cancelOAuthLogin(), "oauth.cancel_failed");
+}
+
+export async function getAccountUsageViaWails(
+  accountId: string,
+): Promise<AccountUsageSnapshot> {
+  const getAccountUsage = window.go?.main?.App?.GetAccountUsage;
+
+  if (!getAccountUsage) {
+    throw { code: "usage.load_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await getAccountUsage(accountId), "usage.load_failed");
+}
+
+export async function refreshAllUsageViaWails(): Promise<UsageCollection> {
+  const refreshAllUsage = window.go?.main?.App?.RefreshAllUsage;
+
+  if (!refreshAllUsage) {
+    throw { code: "usage.load_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await refreshAllUsage(), "usage.load_failed");
 }
 
 export function subscribeToRuntimeEvent<T>(

@@ -38,6 +38,26 @@ export interface OAuthCancelResult {
   pending: boolean;
 }
 
+export interface UsageWindowSnapshot {
+  usedPercent?: number;
+  windowMinutes: number;
+  resetsAt?: string;
+}
+
+export interface AccountUsageSnapshot {
+  accountId: string;
+  planType?: string;
+  status: string;
+  reasonCode?: string;
+  fiveHour?: UsageWindowSnapshot;
+  weekly?: UsageWindowSnapshot;
+  refreshedAt: string;
+}
+
+export interface UsageCollection {
+  items: AccountUsageSnapshot[];
+}
+
 export interface RenameAccountInput {
   id: string;
   displayName: string;

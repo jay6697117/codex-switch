@@ -8,11 +8,15 @@ export function CompleteOAuthLogin():Promise<contracts.ResultEnvelope_codex_swit
 
 export function DeleteAccount(arg1:string):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountsSnapshot_>;
 
+export function GetAccountUsage(arg1:string):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountUsageSnapshot_>;
+
 export function GetProcessStatus():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_ProcessStatus_>;
 
 export function LoadAccounts():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountsSnapshot_>;
 
 export function LoadBootstrap():Promise<contracts.BootstrapPayload>;
+
+export function RefreshAllUsage():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_UsageCollection_>;
 
 export function RenameAccount(arg1:contracts.RenameAccountInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountsSnapshot_>;
 

@@ -14,6 +14,10 @@ export function DeleteAccount(arg1) {
   return window['go']['main']['App']['DeleteAccount'](arg1);
 }
 
+export function GetAccountUsage(arg1) {
+  return window['go']['main']['App']['GetAccountUsage'](arg1);
+}
+
 export function GetProcessStatus() {
   return window['go']['main']['App']['GetProcessStatus']();
 }
@@ -24,6 +28,10 @@ export function LoadAccounts() {
 
 export function LoadBootstrap() {
   return window['go']['main']['App']['LoadBootstrap']();
+}
+
+export function RefreshAllUsage() {
+  return window['go']['main']['App']['RefreshAllUsage']();
 }
 
 export function RenameAccount(arg1) {

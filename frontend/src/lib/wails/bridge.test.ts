@@ -3,7 +3,9 @@ import { describe, expect, test, vi } from "vitest";
 import {
   cancelOAuthLoginViaWails,
   completeOAuthLoginViaWails,
+  getAccountUsageViaWails,
   loadProcessStatusViaWails,
+  refreshAllUsageViaWails,
   startOAuthLoginViaWails,
   switchAccountViaWails,
 } from "./bridge";
@@ -137,6 +139,80 @@ describe("wails bridge", () => {
 
     await expect(cancelOAuthLoginViaWails()).resolves.toEqual({
       pending: false,
+    });
+  });
+
+  test("unwraps single-account usage envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          GetAccountUsage: vi.fn().mockResolvedValue({
+            data: {
+              accountId: "acct-1",
+              status: "supported",
+              planType: "team",
+              refreshedAt: "2026-03-11T20:00:00Z",
+              fiveHour: {
+                usedPercent: 21,
+                windowMinutes: 300,
+              },
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(getAccountUsageViaWails("acct-1")).resolves.toEqual({
+      accountId: "acct-1",
+      status: "supported",
+      planType: "team",
+      refreshedAt: "2026-03-11T20:00:00Z",
+      fiveHour: {
+        usedPercent: 21,
+        windowMinutes: 300,
+      },
+    });
+  });
+
+  test("unwraps bulk usage envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          RefreshAllUsage: vi.fn().mockResolvedValue({
+            data: {
+              items: [
+                {
+                  accountId: "acct-1",
+                  status: "supported",
+                  refreshedAt: "2026-03-11T20:00:00Z",
+                },
+                {
+                  accountId: "acct-2",
+                  status: "unsupported",
+                  reasonCode: "usage.unsupported_api_key",
+                  refreshedAt: "2026-03-11T20:00:00Z",
+                },
+              ],
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(refreshAllUsageViaWails()).resolves.toEqual({
+      items: [
+        {
+          accountId: "acct-1",
+          status: "supported",
+          refreshedAt: "2026-03-11T20:00:00Z",
+        },
+        {
+          accountId: "acct-2",
+          status: "unsupported",
+          reasonCode: "usage.unsupported_api_key",
+          refreshedAt: "2026-03-11T20:00:00Z",
+        },
+      ],
     });
   });
 });
