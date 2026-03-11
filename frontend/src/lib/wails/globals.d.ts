@@ -44,6 +44,7 @@ declare global {
       };
     };
     runtime?: {
+      BrowserOpenURL?: (url: string) => void;
       EventsOn?: <T = unknown>(
         eventName: string,
         callback: (payload: EventEnvelope<T>) => void,

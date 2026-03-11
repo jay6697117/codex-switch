@@ -1,0 +1,18 @@
+export const auth = {
+  title: "Add account",
+  closeAction: "Close dialog",
+  nameLabel: "New account name",
+  namePlaceholder: "e.g. Work Account",
+  idleBody: "Start a ChatGPT browser login to add a new account to the local repository.",
+  waitingTitle: "Browser login is in progress",
+  waitingBody: "Finish the authentication in your browser, then return here to complete the login.",
+  startAction: "Start browser login",
+  startingAction: "Starting login...",
+  openBrowserAgain: "Open browser again",
+  completeAction: "Complete login",
+  completingAction: "Completing login...",
+  cancelAction: "Cancel",
+  cancelLogin: "Cancel login",
+  cancellingAction: "Cancelling...",
+  addToolbarAction: "Add account",
+};

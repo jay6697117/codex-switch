@@ -24,9 +24,42 @@ test.beforeEach(async ({ page }) => {
 
     let processStatusCalls = 0;
     const switchCalls: Array<{ accountId: string; confirmRestart: boolean }> = [];
+    const browserOpens: string[] = [];
+    const usageRefreshes: string[] = [];
+    let usageItems = [
+      {
+        accountId: "acc-active",
+        status: "supported",
+        planType: "team",
+        refreshedAt: "2026-03-11T12:00:00Z",
+        fiveHour: {
+          usedPercent: 21,
+          windowMinutes: 300,
+          resetsAt: "2026-03-11T16:00:00Z",
+        },
+        weekly: {
+          usedPercent: 62,
+          windowMinutes: 10080,
+          resetsAt: "2026-03-17T16:00:00Z",
+        },
+      },
+      {
+        accountId: "acc-side",
+        status: "unsupported",
+        reasonCode: "usage.unsupported_api_key",
+        refreshedAt: "2026-03-11T12:00:00Z",
+      },
+    ];
 
     Object.assign(window, {
       __switchCalls: switchCalls,
+      __browserOpens: browserOpens,
+      __usageRefreshes: usageRefreshes,
+      runtime: {
+        BrowserOpenURL: (url: string) => {
+          browserOpens.push(url);
+        },
+      },
       go: {
         main: {
           App: {
@@ -98,6 +131,54 @@ test.beforeEach(async ({ page }) => {
                 },
               };
             },
+            StartOAuthLogin: async (input: { accountName: string }) => ({
+              data: {
+                authUrl: `https://auth.openai.com/oauth/authorize?account=${encodeURIComponent(input.accountName)}`,
+                callbackPort: 1455,
+                pending: true,
+              },
+            }),
+            CompleteOAuthLogin: async () => {
+              accounts.push({
+                id: "acc-new",
+                displayName: "New OAuth Account",
+                email: "new@example.com",
+                authKind: "chatgpt",
+                createdAt: "2026-03-11T09:00:00Z",
+                updatedAt: "2026-03-11T09:00:00Z",
+              });
+              usageItems = [
+                ...usageItems,
+                {
+                  accountId: "acc-new",
+                  status: "supported",
+                  planType: "plus",
+                  refreshedAt: "2026-03-11T12:05:00Z",
+                },
+              ];
+              return {
+                data: {
+                  activeAccountId: "acc-active",
+                  accounts,
+                },
+              };
+            },
+            CancelOAuthLogin: async () => ({
+              data: {
+                pending: false,
+              },
+            }),
+            GetAccountUsage: async (accountId: string) => {
+              usageRefreshes.push(accountId);
+              return {
+                data: usageItems.find((item) => item.accountId === accountId),
+              };
+            },
+            RefreshAllUsage: async () => ({
+              data: {
+                items: usageItems,
+              },
+            }),
           },
         },
       },
@@ -138,4 +219,31 @@ test("blocks switching until confirmation and does not perform a silent switch",
         }).__switchCalls,
     ),
   ).resolves.toEqual([{ accountId: "acc-side", confirmRestart: true }]);
+});
+
+test("supports oauth add-account flow and usage refresh from the shell", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "添加账号" }).click();
+  await expect(page.getByRole("dialog", { name: "添加账号" })).toBeVisible();
+  await expect(page.getByText("Import File")).toHaveCount(0);
+
+  await page.getByRole("textbox", { name: "新账号名称" }).fill("New OAuth Account");
+  await page.getByRole("button", { name: "开始浏览器登录" }).click();
+
+  await expect(
+    page.evaluate(
+      () => (window as typeof window & { __browserOpens: string[] }).__browserOpens.length,
+    ),
+  ).resolves.toBe(1);
+
+  await page.getByRole("button", { name: "完成登录" }).click();
+  await expect(page.getByText("New OAuth Account")).toBeVisible();
+
+  await page.getByRole("button", { name: "刷新 Work Account 的用量" }).click();
+  await expect(
+    page.evaluate(
+      () => (window as typeof window & { __usageRefreshes: string[] }).__usageRefreshes,
+    ),
+  ).resolves.toContain("acc-active");
 });

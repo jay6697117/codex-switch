@@ -12,7 +12,7 @@
 
 - [x] **Phase 1: Foundation and Locale Bootstrap** - 建立 Wails 工程骨架、前后端契约和双语基础设施
 - [x] **Phase 2: Accounts and Safe Switching** - 落地本地账号仓库、进程检测和安全切换事务
-- [ ] **Phase 3: OAuth and Usage Visibility** - 完成 OAuth 添加账号、token refresh 与 usage 可视化
+- [x] **Phase 3: OAuth and Usage Visibility** - 完成 OAuth 添加账号、token refresh 与 usage 可视化
 - [ ] **Phase 4: Warmup Automation** - 迁移单账号/全量 warm-up、定时调度和错过补跑
 - [ ] **Phase 5: Backup and Preference Management** - 完成 slim/full 备份、安全模式、语言偏好与设置能力
 - [ ] **Phase 6: Localization Completion and Release Readiness** - 完整补齐双语覆盖、回归测试、打包与发布质量
@@ -64,9 +64,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: Implement OAuth callback server, token refresh, and account creation services
-- [ ] 03-02: Implement usage adapters, retry/refresh handling, and result normalization
-- [ ] 03-03: Build add-account OAuth flow and usage presentation in the frontend
+- [x] 03-01: Implement OAuth callback server, token refresh, and account creation services
+- [x] 03-02: Implement usage adapters, retry/refresh handling, and result normalization
+- [x] 03-03: Build add-account OAuth flow and usage presentation in the frontend
 
 ### Phase 4: Warmup Automation
 **Goal**: 迁移 manual warm-up、scheduled warm-up、错过补跑与结果事件反馈。  
@@ -125,7 +125,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation and Locale Bootstrap | 4/4 | Complete | 2026-03-11 |
 | 2. Accounts and Safe Switching | 3/3 | Complete | 2026-03-11 |
-| 3. OAuth and Usage Visibility | 0/3 | Not started | - |
+| 3. OAuth and Usage Visibility | 3/3 | Complete | 2026-03-11 |
 | 4. Warmup Automation | 0/3 | Not started | - |
 | 5. Backup and Preference Management | 0/3 | Not started | - |
 | 6. Localization Completion and Release Readiness | 0/3 | Not started | - |

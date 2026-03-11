@@ -2,11 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SectionCard } from "../../components/SectionCard";
+import { AddAccountModal, type OAuthPhase } from "../auth/AddAccountModal";
+import { openBrowserUrl } from "../auth/browser";
+import { UsageSummary } from "../usage/UsageSummary";
 import type {
   AccountSummary,
+  AccountUsageSnapshot,
   AccountsSnapshot,
   AppError,
   ProcessStatus,
+  UsageCollection,
 } from "../../lib/contracts";
 import type { AppServices } from "../../lib/wails/services";
 import { deriveAccountsView, toggleMaskedAccount } from "./model";
@@ -15,7 +20,7 @@ const DELETE_CONFIRM_TIMEOUT_MS = 3_000;
 const MASKED_VALUE = "••••••••";
 
 interface AccountSectionProps {
-  services: Pick<AppServices, "accounts" | "process">;
+  services: Pick<AppServices, "accounts" | "oauth" | "process" | "usage">;
 }
 
 interface AccountCardProps {
@@ -25,14 +30,17 @@ interface AccountCardProps {
   isEditing: boolean;
   isDeletePending: boolean;
   isSwitching: boolean;
+  isUsageLoading: boolean;
   renameDraft: string;
+  usage?: AccountUsageSnapshot;
   onBeginRename: (account: AccountSummary) => void;
-  onRenameDraftChange: (value: string) => void;
-  onRenameCancel: () => void;
-  onRenameSubmit: (accountId: string) => Promise<void>;
-  onToggleMask: (accountId: string) => void;
   onDelete: (accountId: string) => void;
+  onRefreshUsage: (accountId: string) => void;
+  onRenameCancel: () => void;
+  onRenameDraftChange: (value: string) => void;
+  onRenameSubmit: (accountId: string) => Promise<void>;
   onSwitch: (accountId: string) => void;
+  onToggleMask: (accountId: string) => void;
 }
 
 function getErrorCode(error: unknown, fallbackCode: string): string {
@@ -104,6 +112,42 @@ function getProcessCopy(
   };
 }
 
+function mapUsageCollection(
+  collection: UsageCollection,
+  snapshot: AccountsSnapshot,
+): Record<string, AccountUsageSnapshot> {
+  const accountIds = new Set(snapshot.accounts.map((account) => account.id));
+  const nextUsageByAccountId: Record<string, AccountUsageSnapshot> = {};
+
+  for (const item of collection.items) {
+    if (accountIds.has(item.accountId)) {
+      nextUsageByAccountId[item.accountId] = item;
+    }
+  }
+
+  return nextUsageByAccountId;
+}
+
+function pruneUsageMap(
+  usageByAccountId: Record<string, AccountUsageSnapshot>,
+  snapshot: AccountsSnapshot,
+): Record<string, AccountUsageSnapshot> {
+  const accountIds = new Set(snapshot.accounts.map((account) => account.id));
+
+  return Object.fromEntries(
+    Object.entries(usageByAccountId).filter(([accountId]) => accountIds.has(accountId)),
+  );
+}
+
+function pruneMaskedAccounts(
+  maskedAccountIds: Set<string>,
+  snapshot: AccountsSnapshot,
+): Set<string> {
+  const accountIds = new Set(snapshot.accounts.map((account) => account.id));
+
+  return new Set([...maskedAccountIds].filter((accountId) => accountIds.has(accountId)));
+}
+
 function SwitchConfirmationDialog({
   processStatus,
   onCancel,
@@ -153,16 +197,19 @@ function AccountCard({
   isEditing,
   isDeletePending,
   isSwitching,
+  isUsageLoading,
   renameDraft,
+  usage,
   onBeginRename,
-  onRenameDraftChange,
-  onRenameCancel,
-  onRenameSubmit,
-  onToggleMask,
   onDelete,
+  onRefreshUsage,
+  onRenameCancel,
+  onRenameDraftChange,
+  onRenameSubmit,
   onSwitch,
+  onToggleMask,
 }: AccountCardProps) {
-  const { t } = useTranslation("accounts");
+  const { t } = useTranslation(["accounts", "usage"]);
   const actionName = getActionName(account, isMasked, t);
   const title = maskCopy(account.displayName, isMasked) ?? MASKED_VALUE;
   const subtitle = maskCopy(account.email, isMasked);
@@ -173,16 +220,16 @@ function AccountCard({
         <div className="account-card-title-block">
           <div className="account-badge-row">
             <span className="account-auth-badge">{getAuthKindLabel(account.authKind, t)}</span>
-            {isActive ? <span className="account-active-badge">{t("activeBadge")}</span> : null}
+            {isActive ? <span className="account-active-badge">{t("accounts:activeBadge")}</span> : null}
           </div>
 
           {isEditing ? (
             <div className="account-rename-block">
               <label className="account-field-label" htmlFor={`rename-${account.id}`}>
-                {t("renameLabel")}
+                {t("accounts:renameLabel")}
               </label>
               <input
-                aria-label={t("renameLabel")}
+                aria-label={t("accounts:renameLabel")}
                 autoFocus
                 className="account-rename-input"
                 id={`rename-${account.id}`}
@@ -201,15 +248,15 @@ function AccountCard({
                     onRenameCancel();
                   }
                 }}
-                placeholder={t("renamePlaceholder")}
+                placeholder={t("accounts:renamePlaceholder")}
                 type="text"
                 value={renameDraft}
               />
-              <p className="account-muted-copy">{t("renameHint")}</p>
+              <p className="account-muted-copy">{t("accounts:renameHint")}</p>
             </div>
           ) : (
             <button
-              aria-label={t("editAccount", { name: actionName })}
+              aria-label={t("accounts:editAccount", { name: actionName })}
               className="account-title-button"
               onClick={() => onBeginRename(account)}
               type="button"
@@ -222,47 +269,59 @@ function AccountCard({
         </div>
       </div>
 
+      <UsageSummary loading={isUsageLoading} usage={usage} />
+
       <div className="account-card-footer">
         <div className="account-visibility">
-          <span>{isMasked ? t("visibilityHidden") : t("visibilityVisible")}</span>
+          <span>{isMasked ? t("accounts:visibilityHidden") : t("accounts:visibilityVisible")}</span>
         </div>
 
         <div className="account-card-actions">
           <button
+            aria-label={t("usage:refreshUsageAccount", { name: actionName })}
+            className="secondary-button"
+            disabled={isUsageLoading}
+            onClick={() => onRefreshUsage(account.id)}
+            type="button"
+          >
+            {t("usage:refreshAction")}
+          </button>
+
+          <button
             aria-label={
               isMasked
-                ? t("showAccount", { name: actionName })
-                : t("hideAccount", { name: actionName })
+                ? t("accounts:showAccount", { name: actionName })
+                : t("accounts:hideAccount", { name: actionName })
             }
             className="secondary-button"
             onClick={() => onToggleMask(account.id)}
             type="button"
           >
-            {isMasked ? t("showAction") : t("hideAction")}
+            {isMasked ? t("accounts:showAction") : t("accounts:hideAction")}
           </button>
 
           <button
             aria-label={
               isDeletePending
-                ? t("confirmDeleteAccount", { name: actionName })
-                : t("deleteAccount", { name: actionName })
+                ? t("accounts:confirmDeleteAccount", { name: actionName })
+                : t("accounts:deleteAccount", { name: actionName })
             }
             className={isDeletePending ? "danger-button" : "secondary-button"}
             onClick={() => onDelete(account.id)}
             type="button"
           >
-            {isDeletePending ? t("confirmDeleteAction") : t("deleteAction")}
+            {isDeletePending ? t("accounts:confirmDeleteAction") : t("accounts:deleteAction")}
           </button>
 
           {isActive ? null : (
             <button
-              aria-label={t("switchAccount", { name: actionName })}
+              aria-label={t("accounts:switchAccount", { name: actionName })}
               className="primary-button"
               disabled={isSwitching}
               onClick={() => onSwitch(account.id)}
               type="button"
             >
-              {isSwitching ? t("switchingAction") : t("switchAction")}
+              {isSwitching ? t("accounts:switchingAction") : t("accounts:switchAction")}
             </button>
           )}
         </div>
@@ -272,9 +331,12 @@ function AccountCard({
 }
 
 export function AccountSection({ services }: AccountSectionProps) {
-  const { t } = useTranslation(["accounts", "errors"]);
+  const { t } = useTranslation(["accounts", "auth", "errors", "usage"]);
   const [snapshot, setSnapshot] = useState<AccountsSnapshot | null>(null);
   const [processStatus, setProcessStatus] = useState<ProcessStatus | null>(null);
+  const [usageByAccountId, setUsageByAccountId] = useState<Record<string, AccountUsageSnapshot>>(
+    {},
+  );
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [allMasked, setAllMasked] = useState(false);
   const [maskedAccountIds, setMaskedAccountIds] = useState<Set<string>>(() => new Set());
@@ -284,7 +346,96 @@ export function AccountSection({ services }: AccountSectionProps) {
   const [switchCandidateAccountId, setSwitchCandidateAccountId] = useState<string | null>(null);
   const [switchConfirmOpen, setSwitchConfirmOpen] = useState(false);
   const [switchingAccountId, setSwitchingAccountId] = useState<string | null>(null);
+  const [usageLoadingAccountIds, setUsageLoadingAccountIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [refreshAllUsagePending, setRefreshAllUsagePending] = useState(false);
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [oauthPhase, setOAuthPhase] = useState<OAuthPhase>("idle");
+  const [oauthAuthUrl, setOAuthAuthUrl] = useState<string | null>(null);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const applySnapshot = (nextSnapshot: AccountsSnapshot) => {
+    setSnapshot(nextSnapshot);
+    setUsageByAccountId((current) => pruneUsageMap(current, nextSnapshot));
+    setMaskedAccountIds((current) => pruneMaskedAccounts(current, nextSnapshot));
+  };
+
+  const resetOAuthState = () => {
+    setAddAccountOpen(false);
+    setOAuthPhase("idle");
+    setOAuthAuthUrl(null);
+  };
+
+  const refreshProcessStatus = async (): Promise<ProcessStatus | null> => {
+    try {
+      const nextStatus = await services.process.getStatus();
+      setProcessStatus(nextStatus);
+      return nextStatus;
+    } catch (error) {
+      setErrorCode(getErrorCode(error, "process.detect_failed"));
+      return null;
+    }
+  };
+
+  const refreshAllUsage = async (targetSnapshot: AccountsSnapshot) => {
+    if (targetSnapshot.accounts.length === 0) {
+      setUsageByAccountId({});
+      return;
+    }
+
+    setRefreshAllUsagePending(true);
+
+    try {
+      const collection = await services.usage.refreshAll();
+      setUsageByAccountId(mapUsageCollection(collection, targetSnapshot));
+      setErrorCode(null);
+    } catch (error) {
+      setErrorCode(getErrorCode(error, "usage.load_failed"));
+    } finally {
+      setRefreshAllUsagePending(false);
+    }
+  };
+
+  const refreshUsageForAccount = async (
+    accountId: string,
+    targetSnapshot?: AccountsSnapshot | null,
+  ) => {
+    const nextSnapshot = targetSnapshot ?? snapshot;
+
+    if (!nextSnapshot || !nextSnapshot.accounts.some((account) => account.id === accountId)) {
+      return;
+    }
+
+    setUsageLoadingAccountIds((current) => {
+      const next = new Set(current);
+      next.add(accountId);
+      return next;
+    });
+
+    try {
+      const usage = await services.usage.get(accountId);
+      setUsageByAccountId((current) => {
+        if (!nextSnapshot.accounts.some((account) => account.id === accountId)) {
+          return current;
+        }
+
+        return {
+          ...current,
+          [accountId]: usage,
+        };
+      });
+      setErrorCode(null);
+    } catch (error) {
+      setErrorCode(getErrorCode(error, "usage.load_failed"));
+    } finally {
+      setUsageLoadingAccountIds((current) => {
+        const next = new Set(current);
+        next.delete(accountId);
+        return next;
+      });
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -300,9 +451,25 @@ export function AccountSection({ services }: AccountSectionProps) {
           return;
         }
 
-        setSnapshot(nextSnapshot);
+        applySnapshot(nextSnapshot);
         setProcessStatus(nextProcessStatus);
         setErrorCode(null);
+
+        try {
+          const collection = await services.usage.refreshAll();
+
+          if (!active) {
+            return;
+          }
+
+          setUsageByAccountId(mapUsageCollection(collection, nextSnapshot));
+        } catch (error) {
+          if (!active) {
+            return;
+          }
+
+          setErrorCode(getErrorCode(error, "usage.load_failed"));
+        }
       } catch (error) {
         if (!active) {
           return;
@@ -324,21 +491,9 @@ export function AccountSection({ services }: AccountSectionProps) {
   }, [services]);
 
   const view = useMemo(
-    () =>
-      snapshot ? deriveAccountsView(snapshot, maskedAccountIds, allMasked) : null,
+    () => (snapshot ? deriveAccountsView(snapshot, maskedAccountIds, allMasked) : null),
     [allMasked, maskedAccountIds, snapshot],
   );
-
-  const refreshProcessStatus = async (): Promise<ProcessStatus | null> => {
-    try {
-      const nextStatus = await services.process.getStatus();
-      setProcessStatus(nextStatus);
-      return nextStatus;
-    } catch (error) {
-      setErrorCode(getErrorCode(error, "process.detect_failed"));
-      return null;
-    }
-  };
 
   const clearDeleteTimeout = () => {
     if (!deleteTimeoutRef.current) {
@@ -371,7 +526,7 @@ export function AccountSection({ services }: AccountSectionProps) {
         displayName: renameDraft,
       });
 
-      setSnapshot(nextSnapshot);
+      applySnapshot(nextSnapshot);
       setEditingAccountId(null);
       setRenameDraft("");
       setErrorCode(null);
@@ -396,7 +551,7 @@ export function AccountSection({ services }: AccountSectionProps) {
       const nextSnapshot = await services.accounts.remove(accountId);
       clearDeleteTimeout();
       setPendingDeleteAccountId(null);
-      setSnapshot(nextSnapshot);
+      applySnapshot(nextSnapshot);
       setErrorCode(null);
       await refreshProcessStatus();
     } catch (error) {
@@ -413,11 +568,11 @@ export function AccountSection({ services }: AccountSectionProps) {
         confirmRestart,
       });
 
-      setSnapshot(result.accounts);
+      applySnapshot(result.accounts);
       setSwitchCandidateAccountId(null);
       setSwitchConfirmOpen(false);
       setErrorCode(null);
-      await refreshProcessStatus();
+      await Promise.all([refreshProcessStatus(), refreshUsageForAccount(accountId, result.accounts)]);
     } catch (error) {
       setErrorCode(getErrorCode(error, "switch.active_update_failed"));
     } finally {
@@ -443,6 +598,82 @@ export function AccountSection({ services }: AccountSectionProps) {
     await performSwitch(accountId, false);
   };
 
+  const handleStartOAuthLogin = async (accountName: string) => {
+    const normalizedAccountName = accountName.trim();
+
+    if (!normalizedAccountName) {
+      setErrorCode("oauth.name_required");
+      return;
+    }
+
+    setOAuthPhase("starting");
+    setErrorCode(null);
+
+    try {
+      const result = await services.oauth.start({
+        accountName: normalizedAccountName,
+      });
+
+      setOAuthAuthUrl(result.authUrl);
+      setOAuthPhase("waiting");
+      openBrowserUrl(result.authUrl);
+    } catch (error) {
+      setOAuthPhase("idle");
+      setErrorCode(getErrorCode(error, "oauth.start_failed"));
+    }
+  };
+
+  const handleOpenBrowserAgain = () => {
+    if (!oauthAuthUrl) {
+      return;
+    }
+
+    openBrowserUrl(oauthAuthUrl);
+  };
+
+  const handleCancelOAuthLogin = async () => {
+    if (oauthPhase === "idle" || oauthPhase === "starting") {
+      resetOAuthState();
+      return;
+    }
+
+    setOAuthPhase("cancelling");
+
+    try {
+      await services.oauth.cancel();
+      setErrorCode(null);
+      resetOAuthState();
+    } catch (error) {
+      setOAuthPhase("waiting");
+      setErrorCode(getErrorCode(error, "oauth.cancel_failed"));
+    }
+  };
+
+  const handleCloseAddAccount = async () => {
+    if (oauthPhase === "waiting" || oauthPhase === "completing" || oauthPhase === "cancelling") {
+      await handleCancelOAuthLogin();
+      return;
+    }
+
+    setErrorCode(null);
+    resetOAuthState();
+  };
+
+  const handleCompleteOAuthLogin = async () => {
+    setOAuthPhase("completing");
+
+    try {
+      const nextSnapshot = await services.oauth.complete();
+      applySnapshot(nextSnapshot);
+      await Promise.all([refreshProcessStatus(), refreshAllUsage(nextSnapshot)]);
+      setErrorCode(null);
+      resetOAuthState();
+    } catch (error) {
+      setOAuthPhase("waiting");
+      setErrorCode(getErrorCode(error, "oauth.complete_failed"));
+    }
+  };
+
   if (!snapshot || !processStatus || !view) {
     return (
       <SectionCard title={t("accounts:title")}>
@@ -461,13 +692,37 @@ export function AccountSection({ services }: AccountSectionProps) {
           <strong>{processCopy.title}</strong>
           <span>{processCopy.body}</span>
         </div>
-        <button
-          className="secondary-button"
-          onClick={() => setAllMasked((current) => !current)}
-          type="button"
-        >
-          {allMasked ? t("accounts:showAll") : t("accounts:hideAll")}
-        </button>
+        <div className="accounts-toolbar-actions">
+          <button
+            aria-label={t("usage:refreshAllAccounts")}
+            className="secondary-button"
+            disabled={refreshAllUsagePending}
+            onClick={() => {
+              void refreshAllUsage(snapshot);
+            }}
+            type="button"
+          >
+            {t("usage:refreshAllAction")}
+          </button>
+          <button
+            aria-label={t("auth:addToolbarAction")}
+            className="primary-button"
+            onClick={() => {
+              setErrorCode(null);
+              setAddAccountOpen(true);
+            }}
+            type="button"
+          >
+            {t("auth:addToolbarAction")}
+          </button>
+          <button
+            className="secondary-button"
+            onClick={() => setAllMasked((current) => !current)}
+            type="button"
+          >
+            {allMasked ? t("accounts:showAll") : t("accounts:hideAll")}
+          </button>
+        </div>
       </div>
 
       {errorCode ? <p className="accounts-error-banner">{t(`errors:${errorCode}`)}</p> : null}
@@ -491,8 +746,14 @@ export function AccountSection({ services }: AccountSectionProps) {
                 isEditing={editingAccountId === view.activeAccount.id}
                 isMasked={view.isMasked(view.activeAccount.id)}
                 isSwitching={switchingAccountId === view.activeAccount.id}
+                isUsageLoading={
+                  refreshAllUsagePending || usageLoadingAccountIds.has(view.activeAccount.id)
+                }
                 onBeginRename={beginRename}
                 onDelete={handleDelete}
+                onRefreshUsage={(accountId) => {
+                  void refreshUsageForAccount(accountId);
+                }}
                 onRenameCancel={cancelRename}
                 onRenameDraftChange={setRenameDraft}
                 onRenameSubmit={handleRenameSubmit}
@@ -501,6 +762,7 @@ export function AccountSection({ services }: AccountSectionProps) {
                   setMaskedAccountIds((current) => toggleMaskedAccount(current, accountId))
                 }
                 renameDraft={renameDraft}
+                usage={usageByAccountId[view.activeAccount.id]}
               />
             </div>
           ) : null}
@@ -521,8 +783,14 @@ export function AccountSection({ services }: AccountSectionProps) {
                     isEditing={editingAccountId === account.id}
                     isMasked={view.isMasked(account.id)}
                     isSwitching={switchingAccountId === account.id}
+                    isUsageLoading={
+                      refreshAllUsagePending || usageLoadingAccountIds.has(account.id)
+                    }
                     onBeginRename={beginRename}
                     onDelete={handleDelete}
+                    onRefreshUsage={(accountId) => {
+                      void refreshUsageForAccount(accountId);
+                    }}
                     onRenameCancel={cancelRename}
                     onRenameDraftChange={setRenameDraft}
                     onRenameSubmit={handleRenameSubmit}
@@ -531,6 +799,7 @@ export function AccountSection({ services }: AccountSectionProps) {
                       setMaskedAccountIds((current) => toggleMaskedAccount(current, accountId))
                     }
                     renameDraft={renameDraft}
+                    usage={usageByAccountId[account.id]}
                   />
                 ))}
               </div>
@@ -541,7 +810,7 @@ export function AccountSection({ services }: AccountSectionProps) {
         </div>
       )}
 
-      {switchConfirmOpen && switchCandidateAccountId ? (
+      {switchConfirmOpen && processStatus && switchCandidateAccountId ? (
         <SwitchConfirmationDialog
           onCancel={() => {
             setSwitchCandidateAccountId(null);
@@ -554,6 +823,18 @@ export function AccountSection({ services }: AccountSectionProps) {
           processStatus={processStatus}
         />
       ) : null}
+
+      <AddAccountModal
+        authUrl={oauthAuthUrl}
+        errorCode={errorCode}
+        isOpen={addAccountOpen}
+        onCancel={handleCancelOAuthLogin}
+        onClose={handleCloseAddAccount}
+        onComplete={handleCompleteOAuthLogin}
+        onOpenBrowserAgain={handleOpenBrowserAgain}
+        onStart={handleStartOAuthLogin}
+        phase={oauthPhase}
+      />
     </SectionCard>
   );
 }

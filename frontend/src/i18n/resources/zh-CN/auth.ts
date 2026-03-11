@@ -1,0 +1,18 @@
+export const auth = {
+  title: "添加账号",
+  closeAction: "关闭弹窗",
+  nameLabel: "新账号名称",
+  namePlaceholder: "例如：工作账号",
+  idleBody: "通过 ChatGPT 浏览器登录把新账号加入本地仓库。",
+  waitingTitle: "浏览器登录进行中",
+  waitingBody: "请先在浏览器中完成认证，再回到这里完成登录。",
+  startAction: "开始浏览器登录",
+  startingAction: "正在启动登录...",
+  openBrowserAgain: "再次打开浏览器",
+  completeAction: "完成登录",
+  completingAction: "正在完成登录...",
+  cancelAction: "取消",
+  cancelLogin: "取消登录",
+  cancellingAction: "正在取消...",
+  addToolbarAction: "添加账号",
+};

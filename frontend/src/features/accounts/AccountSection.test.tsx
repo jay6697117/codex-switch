@@ -6,9 +6,11 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { AccountSection } from "./AccountSection";
 import { createAppI18n } from "../../i18n/createAppI18n";
 import type {
+  AccountUsageSnapshot,
   AccountsSnapshot,
   ProcessStatus,
   SwitchAccountResult,
+  UsageCollection,
 } from "../../lib/contracts";
 import type { AppServices } from "../../lib/wails/services";
 
@@ -47,7 +49,11 @@ function createServices(options?: {
   renameResult?: AccountsSnapshot;
   removeResult?: AccountsSnapshot;
   switchResult?: SwitchAccountResult;
-}): Pick<AppServices, "accounts" | "process"> {
+  usageAllResult?: UsageCollection;
+  usageById?: Record<string, AccountUsageSnapshot>;
+  oauthStartResult?: { authUrl: string; callbackPort: number; pending: boolean };
+  oauthCompleteResult?: AccountsSnapshot;
+}): Pick<AppServices, "accounts" | "process" | "oauth" | "usage"> {
   const snapshot = options?.snapshot ?? baseSnapshot;
   const processStatuses = options?.processStatuses ?? [idleProcessStatus];
   const renameResult =
@@ -73,6 +79,60 @@ function createServices(options?: {
         accounts: snapshot.accounts,
       },
     } satisfies SwitchAccountResult);
+  const usageAllResult =
+    options?.usageAllResult ??
+    ({
+      items: [
+        {
+          accountId: "acc-active",
+          status: "supported",
+          planType: "team",
+          refreshedAt: "2026-03-11T12:00:00Z",
+          fiveHour: {
+            usedPercent: 21,
+            windowMinutes: 300,
+            resetsAt: "2026-03-11T16:00:00Z",
+          },
+          weekly: {
+            usedPercent: 62,
+            windowMinutes: 10080,
+            resetsAt: "2026-03-17T16:00:00Z",
+          },
+        },
+        {
+          accountId: "acc-side",
+          status: "unsupported",
+          reasonCode: "usage.unsupported_api_key",
+          refreshedAt: "2026-03-11T12:00:00Z",
+        },
+      ],
+    } satisfies UsageCollection);
+  const usageById = options?.usageById ?? {
+    "acc-active": usageAllResult.items[0] as AccountUsageSnapshot,
+    "acc-side": usageAllResult.items[1] as AccountUsageSnapshot,
+  };
+  const oauthStartResult =
+    options?.oauthStartResult ?? {
+      authUrl: "https://auth.openai.com/oauth/authorize?state=abc",
+      callbackPort: 1455,
+      pending: true,
+    };
+  const oauthCompleteResult =
+    options?.oauthCompleteResult ??
+    ({
+      activeAccountId: "acc-new",
+      accounts: [
+        ...snapshot.accounts,
+        {
+          id: "acc-new",
+          displayName: "New OAuth Account",
+          email: "new@example.com",
+          authKind: "chatgpt",
+          createdAt: "2026-03-11T10:00:00Z",
+          updatedAt: "2026-03-11T10:00:00Z",
+        },
+      ],
+    } satisfies AccountsSnapshot);
 
   return {
     accounts: {
@@ -89,11 +149,20 @@ function createServices(options?: {
         return processStatuses[0] as ProcessStatus;
       }),
     },
+    oauth: {
+      start: vi.fn().mockResolvedValue(oauthStartResult),
+      complete: vi.fn().mockResolvedValue(oauthCompleteResult),
+      cancel: vi.fn().mockResolvedValue({ pending: false }),
+    },
+    usage: {
+      get: vi.fn(async (accountId: string) => usageById[accountId]),
+      refreshAll: vi.fn().mockResolvedValue(usageAllResult),
+    },
   };
 }
 
 async function renderAccountSection(
-  services: Pick<AppServices, "accounts" | "process">,
+  services: Pick<AppServices, "accounts" | "process" | "oauth" | "usage">,
   options?: {
     useFakeTimers?: boolean;
   },
@@ -137,6 +206,8 @@ describe("AccountSection", () => {
     expect(screen.getByText("Side Project")).toBeInTheDocument();
     expect(screen.getByText("Restart required")).toBeInTheDocument();
     expect(screen.getByText("1 foreground · 2 background")).toBeInTheDocument();
+    expect(await screen.findByText("5h")).toBeInTheDocument();
+    expect(await screen.findByText("Weekly")).toBeInTheDocument();
   });
 
   test("supports inline rename and submits on Enter", async () => {
@@ -266,5 +337,66 @@ describe("AccountSection", () => {
     await user.click(screen.getByRole("button", { name: "Hide all accounts" }));
     expect(screen.queryByText("Work Account")).not.toBeInTheDocument();
     expect(screen.getAllByText("••••••••")).toHaveLength(4);
+  });
+
+  test("opens an oauth-only add-account modal and cancels a pending login", async () => {
+    const services = createServices();
+    const { user } = await renderAccountSection(services);
+
+    await screen.findByText("Work Account");
+    await user.click(screen.getByRole("button", { name: "Add account" }));
+
+    expect(await screen.findByRole("dialog", { name: "Add account" })).toBeInTheDocument();
+    expect(screen.queryByText("Import File")).not.toBeInTheDocument();
+
+    await user.type(screen.getByRole("textbox", { name: "New account name" }), "New OAuth Account");
+    await user.click(screen.getByRole("button", { name: "Start browser login" }));
+
+    await waitFor(() => {
+      expect(services.oauth.start).toHaveBeenCalledWith({
+        accountName: "New OAuth Account",
+      });
+    });
+
+    expect(await screen.findByRole("button", { name: "Open browser again" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel login" }));
+
+    await waitFor(() => {
+      expect(services.oauth.cancel).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  test("completes oauth login and refreshes accounts process and usage", async () => {
+    const services = createServices();
+    const { user } = await renderAccountSection(services);
+
+    await screen.findByText("Work Account");
+    await user.click(screen.getByRole("button", { name: "Add account" }));
+    await user.type(screen.getByRole("textbox", { name: "New account name" }), "New OAuth Account");
+    await user.click(screen.getByRole("button", { name: "Start browser login" }));
+    await user.click(await screen.findByRole("button", { name: "Complete login" }));
+
+    await waitFor(() => {
+      expect(services.oauth.complete).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(services.usage.refreshAll).toHaveBeenCalledTimes(2);
+    });
+    expect(await screen.findByText("New OAuth Account")).toBeInTheDocument();
+  });
+
+  test("refreshes usage for a single account without triggering bulk refresh", async () => {
+    const services = createServices();
+    const { user } = await renderAccountSection(services);
+
+    await screen.findByText("Work Account");
+    expect(services.usage.refreshAll).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Refresh usage for Work Account" }));
+
+    await waitFor(() => {
+      expect(services.usage.get).toHaveBeenCalledWith("acc-active");
+    });
+    expect(services.usage.refreshAll).toHaveBeenCalledTimes(1);
   });
 });

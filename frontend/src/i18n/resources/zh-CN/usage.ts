@@ -1,0 +1,14 @@
+export const usage = {
+  title: "用量",
+  loading: "正在刷新用量...",
+  empty: "暂时没有可显示的限额数据。",
+  fiveHourLabel: "5h",
+  weeklyLabel: "Weekly",
+  windowUsage: "已使用 {{percent}}% · 窗口 {{minutes}} 分钟",
+  resetsAt: "{{value}} 重置",
+  refreshAction: "刷新",
+  refreshAllAction: "全部刷新",
+  refreshUsageAccount: "刷新 {{name}} 的用量",
+  refreshAllAccounts: "刷新全部用量",
+  unavailableFallback: "当前无法获取用量。",
+};
