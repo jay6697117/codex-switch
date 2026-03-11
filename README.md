@@ -1,2 +1,2 @@
 # codex-switch
- A tool to switch OpenAI Codex accounts
+- 一个花里胡哨的codex账号切换工具
