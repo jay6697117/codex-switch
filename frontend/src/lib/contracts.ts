@@ -58,6 +58,32 @@ export interface UsageCollection {
   items: AccountUsageSnapshot[];
 }
 
+export interface WarmupAvailability {
+  isAvailable: boolean;
+  reasonCode?: string;
+}
+
+export interface WarmupAccountResult {
+  accountId: string;
+  availability: WarmupAvailability;
+  status: string;
+  failureCode?: string;
+  completedAt: string;
+}
+
+export interface WarmupSummary {
+  totalAccounts: number;
+  eligibleAccounts: number;
+  successfulAccounts: number;
+  failedAccounts: number;
+  skippedAccounts: number;
+}
+
+export interface WarmupAllResult {
+  items: WarmupAccountResult[];
+  summary: WarmupSummary;
+}
+
 export interface RenameAccountInput {
   id: string;
   displayName: string;
@@ -71,6 +97,7 @@ export interface AccountSummary {
   createdAt: string;
   updatedAt: string;
   lastUsedAt?: string;
+  warmupAvailability: WarmupAvailability;
 }
 
 export interface AccountsSnapshot {

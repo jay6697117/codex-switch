@@ -45,6 +45,10 @@ describe("AppShell", () => {
         get: vi.fn(),
         refreshAll: vi.fn(),
       },
+      warmup: {
+        run: vi.fn(),
+        runAll: vi.fn(),
+      },
     };
 
     render(<AppShell i18n={i18n} services={services} />);

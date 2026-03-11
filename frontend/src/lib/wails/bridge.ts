@@ -13,6 +13,8 @@ import type {
   SwitchAccountInput,
   SwitchAccountResult,
   UsageCollection,
+  WarmupAccountResult,
+  WarmupAllResult,
 } from "../contracts";
 
 const fallbackBootstrapPayload: BootstrapPayload = {
@@ -166,6 +168,28 @@ export async function refreshAllUsageViaWails(): Promise<UsageCollection> {
   }
 
   return unwrapEnvelope(await refreshAllUsage(), "usage.load_failed");
+}
+
+export async function warmupAccountViaWails(
+  accountId: string,
+): Promise<WarmupAccountResult> {
+  const warmupAccount = window.go?.main?.App?.WarmupAccount;
+
+  if (!warmupAccount) {
+    throw { code: "warmup.execute_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await warmupAccount(accountId), "warmup.execute_failed");
+}
+
+export async function warmupAllAccountsViaWails(): Promise<WarmupAllResult> {
+  const warmupAllAccounts = window.go?.main?.App?.WarmupAllAccounts;
+
+  if (!warmupAllAccounts) {
+    throw { code: "warmup.execute_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await warmupAllAccounts(), "warmup.execute_failed");
 }
 
 export function subscribeToRuntimeEvent<T>(

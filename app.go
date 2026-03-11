@@ -13,6 +13,7 @@ import (
 	"codex-switch/internal/settings"
 	"codex-switch/internal/switching"
 	"codex-switch/internal/usage"
+	"codex-switch/internal/warmup"
 )
 
 type App struct {
@@ -23,6 +24,7 @@ type App struct {
 	tokenService     *auth.TokenService
 	switchService    *switching.Service
 	usageService     *usage.Service
+	warmupService    *warmup.Service
 }
 
 func NewApp() *App {
@@ -56,6 +58,11 @@ func NewApp() *App {
 			tokenService,
 			usage.DefaultHTTPFetcher(),
 		),
+		warmupService: warmup.NewService(
+			repository,
+			tokenService,
+			warmup.DefaultHTTPProvider(),
+		),
 	}
 }
 
@@ -73,16 +80,25 @@ func (a *App) LoadBootstrap() (contracts.BootstrapPayload, error) {
 
 func (a *App) LoadAccounts() contracts.ResultEnvelope[contracts.AccountsSnapshot] {
 	snapshot, err := a.accountService.LoadAccounts(a.requestContext())
+	if err == nil {
+		snapshot = a.decorateAccountsSnapshot(snapshot)
+	}
 	return wrapResult(snapshot, err, "account.load_failed")
 }
 
 func (a *App) RenameAccount(input contracts.RenameAccountInput) contracts.ResultEnvelope[contracts.AccountsSnapshot] {
 	snapshot, err := a.accountService.RenameAccount(a.requestContext(), input.ID, input.DisplayName)
+	if err == nil {
+		snapshot = a.decorateAccountsSnapshot(snapshot)
+	}
 	return wrapResult(snapshot, err, "account.rename_failed")
 }
 
 func (a *App) DeleteAccount(accountID string) contracts.ResultEnvelope[contracts.AccountsSnapshot] {
 	snapshot, err := a.accountService.DeleteAccount(a.requestContext(), accountID)
+	if err == nil {
+		snapshot = a.decorateAccountsSnapshot(snapshot)
+	}
 	return wrapResult(snapshot, err, "account.delete_failed")
 }
 
@@ -93,6 +109,9 @@ func (a *App) GetProcessStatus() contracts.ResultEnvelope[contracts.ProcessStatu
 
 func (a *App) SwitchAccount(input contracts.SwitchAccountInput) contracts.ResultEnvelope[contracts.SwitchAccountResult] {
 	result, err := a.switchService.SwitchAccount(a.requestContext(), input)
+	if err == nil {
+		result.Accounts = a.decorateAccountsSnapshot(result.Accounts)
+	}
 	return wrapResult(result, err, "switch.active_update_failed")
 }
 
@@ -103,6 +122,9 @@ func (a *App) StartOAuthLogin(input contracts.StartOAuthLoginInput) contracts.Re
 
 func (a *App) CompleteOAuthLogin() contracts.ResultEnvelope[contracts.AccountsSnapshot] {
 	snapshot, err := a.authService.CompleteLogin(a.requestContext())
+	if err == nil {
+		snapshot = a.decorateAccountsSnapshot(snapshot)
+	}
 	return wrapResult(snapshot, err, "oauth.complete_failed")
 }
 
@@ -119,6 +141,16 @@ func (a *App) GetAccountUsage(accountID string) contracts.ResultEnvelope[contrac
 func (a *App) RefreshAllUsage() contracts.ResultEnvelope[contracts.UsageCollection] {
 	result, err := a.usageService.RefreshAllUsage(a.requestContext())
 	return wrapResult(result, err, "usage.load_failed")
+}
+
+func (a *App) WarmupAccount(accountID string) contracts.ResultEnvelope[contracts.WarmupAccountResult] {
+	result, err := a.warmupService.WarmupAccount(a.requestContext(), accountID)
+	return wrapResult(mapWarmupAccountResult(result), err, "warmup.execute_failed")
+}
+
+func (a *App) WarmupAllAccounts() contracts.ResultEnvelope[contracts.WarmupAllResult] {
+	result, err := a.warmupService.WarmupAllAccounts(a.requestContext())
+	return wrapResult(mapWarmupAllResult(result), err, "warmup.execute_failed")
 }
 
 func (a *App) requestContext() context.Context {
@@ -142,4 +174,86 @@ func wrapResult[T any](data T, err error, fallbackCode string) contracts.ResultE
 	return contracts.ResultEnvelope[T]{
 		Error: &contracts.AppError{Code: fallbackCode},
 	}
+}
+
+func (a *App) decorateAccountsSnapshot(snapshot contracts.AccountsSnapshot) contracts.AccountsSnapshot {
+	availabilityItems, err := a.warmupService.ListAvailability(a.requestContext())
+	if err != nil {
+		for index := range snapshot.Accounts {
+			snapshot.Accounts[index].WarmupAvailability = contracts.WarmupAvailability{
+				IsAvailable: false,
+				ReasonCode:  stringPointer("warmup.load_failed"),
+			}
+		}
+
+		return snapshot
+	}
+
+	availabilityByAccountID := make(map[string]contracts.WarmupAvailability, len(availabilityItems))
+	for _, item := range availabilityItems {
+		availabilityByAccountID[item.AccountID] = mapWarmupAvailability(item)
+	}
+
+	for index := range snapshot.Accounts {
+		availability, ok := availabilityByAccountID[snapshot.Accounts[index].ID]
+		if !ok {
+			snapshot.Accounts[index].WarmupAvailability = contracts.WarmupAvailability{
+				IsAvailable: false,
+				ReasonCode:  stringPointer("warmup.load_failed"),
+			}
+			continue
+		}
+
+		snapshot.Accounts[index].WarmupAvailability = availability
+	}
+
+	return snapshot
+}
+
+func mapWarmupAllResult(input warmup.WarmupAllResult) contracts.WarmupAllResult {
+	items := make([]contracts.WarmupAccountResult, 0, len(input.Items))
+	for _, item := range input.Items {
+		items = append(items, mapWarmupAccountResult(item))
+	}
+
+	return contracts.WarmupAllResult{
+		Items: items,
+		Summary: contracts.WarmupSummary{
+			TotalAccounts:      input.Summary.TotalAccounts,
+			EligibleAccounts:   input.Summary.EligibleAccounts,
+			SuccessfulAccounts: input.Summary.SuccessfulAccounts,
+			FailedAccounts:     input.Summary.FailedAccounts,
+			SkippedAccounts:    input.Summary.SkippedAccounts,
+		},
+	}
+}
+
+func mapWarmupAccountResult(input warmup.AccountWarmupResult) contracts.WarmupAccountResult {
+	return contracts.WarmupAccountResult{
+		AccountID:    input.AccountID,
+		Availability: mapWarmupAvailability(input.Availability),
+		Status:       input.Status,
+		FailureCode:  copyString(input.FailureCode),
+		CompletedAt:  input.CompletedAt,
+	}
+}
+
+func mapWarmupAvailability(input warmup.Availability) contracts.WarmupAvailability {
+	return contracts.WarmupAvailability{
+		IsAvailable: input.IsAvailable,
+		ReasonCode:  copyString(input.ReasonCode),
+	}
+}
+
+func copyString(value *string) *string {
+	if value == nil {
+		return nil
+	}
+
+	copyValue := *value
+	return &copyValue
+}
+
+func stringPointer(value string) *string {
+	return &value
 }

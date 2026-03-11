@@ -4,10 +4,13 @@ import {
   cancelOAuthLoginViaWails,
   completeOAuthLoginViaWails,
   getAccountUsageViaWails,
+  loadAccountsViaWails,
   loadProcessStatusViaWails,
   refreshAllUsageViaWails,
   startOAuthLoginViaWails,
   switchAccountViaWails,
+  warmupAccountViaWails,
+  warmupAllAccountsViaWails,
 } from "./bridge";
 
 describe("wails bridge", () => {
@@ -142,6 +145,70 @@ describe("wails bridge", () => {
     });
   });
 
+  test("unwraps account snapshots with warmup availability", async () => {
+    window.go = {
+      main: {
+        App: {
+          LoadAccounts: vi.fn().mockResolvedValue({
+            data: {
+              activeAccountId: "acct-1",
+              accounts: [
+                {
+                  id: "acct-1",
+                  displayName: "Work Account",
+                  authKind: "chatgpt",
+                  createdAt: "2026-03-11T00:00:00Z",
+                  updatedAt: "2026-03-11T00:00:00Z",
+                  warmupAvailability: {
+                    isAvailable: true,
+                  },
+                },
+                {
+                  id: "acct-2",
+                  displayName: "API Account",
+                  authKind: "apiKey",
+                  createdAt: "2026-03-11T00:00:00Z",
+                  updatedAt: "2026-03-11T00:00:00Z",
+                  warmupAvailability: {
+                    isAvailable: false,
+                    reasonCode: "warmup.credentials_missing",
+                  },
+                },
+              ],
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(loadAccountsViaWails()).resolves.toEqual({
+      activeAccountId: "acct-1",
+      accounts: [
+        {
+          id: "acct-1",
+          displayName: "Work Account",
+          authKind: "chatgpt",
+          createdAt: "2026-03-11T00:00:00Z",
+          updatedAt: "2026-03-11T00:00:00Z",
+          warmupAvailability: {
+            isAvailable: true,
+          },
+        },
+        {
+          id: "acct-2",
+          displayName: "API Account",
+          authKind: "apiKey",
+          createdAt: "2026-03-11T00:00:00Z",
+          updatedAt: "2026-03-11T00:00:00Z",
+          warmupAvailability: {
+            isAvailable: false,
+            reasonCode: "warmup.credentials_missing",
+          },
+        },
+      ],
+    });
+  });
+
   test("unwraps single-account usage envelopes", async () => {
     window.go = {
       main: {
@@ -213,6 +280,102 @@ describe("wails bridge", () => {
           refreshedAt: "2026-03-11T20:00:00Z",
         },
       ],
+    });
+  });
+
+  test("unwraps single-account warmup envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          WarmupAccount: vi.fn().mockResolvedValue({
+            data: {
+              accountId: "acct-1",
+              status: "success",
+              completedAt: "2026-03-11T20:00:00Z",
+              availability: {
+                isAvailable: true,
+              },
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(warmupAccountViaWails("acct-1")).resolves.toEqual({
+      accountId: "acct-1",
+      status: "success",
+      completedAt: "2026-03-11T20:00:00Z",
+      availability: {
+        isAvailable: true,
+      },
+    });
+  });
+
+  test("unwraps bulk warmup envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          WarmupAllAccounts: vi.fn().mockResolvedValue({
+            data: {
+              items: [
+                {
+                  accountId: "acct-1",
+                  status: "success",
+                  completedAt: "2026-03-11T20:00:00Z",
+                  availability: {
+                    isAvailable: true,
+                  },
+                },
+                {
+                  accountId: "acct-2",
+                  status: "skipped",
+                  completedAt: "2026-03-11T20:00:00Z",
+                  availability: {
+                    isAvailable: false,
+                    reasonCode: "warmup.unsupported_auth_kind",
+                  },
+                },
+              ],
+              summary: {
+                totalAccounts: 2,
+                eligibleAccounts: 1,
+                successfulAccounts: 1,
+                failedAccounts: 0,
+                skippedAccounts: 1,
+              },
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(warmupAllAccountsViaWails()).resolves.toEqual({
+      items: [
+        {
+          accountId: "acct-1",
+          status: "success",
+          completedAt: "2026-03-11T20:00:00Z",
+          availability: {
+            isAvailable: true,
+          },
+        },
+        {
+          accountId: "acct-2",
+          status: "skipped",
+          completedAt: "2026-03-11T20:00:00Z",
+          availability: {
+            isAvailable: false,
+            reasonCode: "warmup.unsupported_auth_kind",
+          },
+        },
+      ],
+      summary: {
+        totalAccounts: 2,
+        eligibleAccounts: 1,
+        successfulAccounts: 1,
+        failedAccounts: 0,
+        skippedAccounts: 1,
+      },
     });
   });
 });

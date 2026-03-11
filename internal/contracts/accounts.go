@@ -6,13 +6,14 @@ type RenameAccountInput struct {
 }
 
 type AccountSummary struct {
-	ID          string  `json:"id"`
-	DisplayName string  `json:"displayName"`
-	Email       string  `json:"email,omitempty"`
-	AuthKind    string  `json:"authKind"`
-	CreatedAt   string  `json:"createdAt"`
-	UpdatedAt   string  `json:"updatedAt"`
-	LastUsedAt  *string `json:"lastUsedAt,omitempty"`
+	ID                 string             `json:"id"`
+	DisplayName        string             `json:"displayName"`
+	Email              string             `json:"email,omitempty"`
+	AuthKind           string             `json:"authKind"`
+	CreatedAt          string             `json:"createdAt"`
+	UpdatedAt          string             `json:"updatedAt"`
+	LastUsedAt         *string            `json:"lastUsedAt,omitempty"`
+	WarmupAvailability WarmupAvailability `json:"warmupAvailability"`
 }
 
 type AccountsSnapshot struct {

@@ -13,6 +13,9 @@ const snapshot: AccountsSnapshot = {
       authKind: "chatgpt",
       createdAt: "2026-03-11T08:00:00.000Z",
       updatedAt: "2026-03-11T08:00:00.000Z",
+      warmupAvailability: {
+        isAvailable: true,
+      },
     },
     {
       id: "acct-2",
@@ -21,6 +24,9 @@ const snapshot: AccountsSnapshot = {
       authKind: "chatgpt",
       createdAt: "2026-03-11T08:00:00.000Z",
       updatedAt: "2026-03-11T08:00:00.000Z",
+      warmupAvailability: {
+        isAvailable: true,
+      },
     },
     {
       id: "acct-3",
@@ -29,6 +35,10 @@ const snapshot: AccountsSnapshot = {
       authKind: "apiKey",
       createdAt: "2026-03-11T08:00:00.000Z",
       updatedAt: "2026-03-11T08:00:00.000Z",
+      warmupAvailability: {
+        isAvailable: false,
+        reasonCode: "warmup.credentials_missing",
+      },
     },
   ],
 };

@@ -25,6 +25,9 @@ const baseSnapshot: AccountsSnapshot = {
       createdAt: "2026-03-11T08:00:00Z",
       updatedAt: "2026-03-11T08:00:00Z",
       lastUsedAt: "2026-03-11T08:10:00Z",
+      warmupAvailability: {
+        isAvailable: true,
+      },
     },
     {
       id: "acc-side",
@@ -33,6 +36,9 @@ const baseSnapshot: AccountsSnapshot = {
       authKind: "apiKey",
       createdAt: "2026-03-11T08:00:00Z",
       updatedAt: "2026-03-11T08:00:00Z",
+      warmupAvailability: {
+        isAvailable: true,
+      },
     },
   ],
 };
@@ -130,6 +136,9 @@ function createServices(options?: {
           authKind: "chatgpt",
           createdAt: "2026-03-11T10:00:00Z",
           updatedAt: "2026-03-11T10:00:00Z",
+          warmupAvailability: {
+            isAvailable: true,
+          },
         },
       ],
     } satisfies AccountsSnapshot);

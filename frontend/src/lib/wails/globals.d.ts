@@ -12,6 +12,8 @@ import type {
   SwitchAccountInput,
   SwitchAccountResult,
   UsageCollection,
+  WarmupAccountResult,
+  WarmupAllResult,
 } from "../contracts";
 
 declare global {
@@ -26,6 +28,10 @@ declare global {
           ) => Promise<ResultEnvelope<AccountUsageSnapshot>>;
           GetProcessStatus?: () => Promise<ResultEnvelope<ProcessStatus>>;
           RefreshAllUsage?: () => Promise<ResultEnvelope<UsageCollection>>;
+          WarmupAccount?: (
+            accountId: string,
+          ) => Promise<ResultEnvelope<WarmupAccountResult>>;
+          WarmupAllAccounts?: () => Promise<ResultEnvelope<WarmupAllResult>>;
           RenameAccount?: (
             input: RenameAccountInput,
           ) => Promise<ResultEnvelope<AccountsSnapshot>>;

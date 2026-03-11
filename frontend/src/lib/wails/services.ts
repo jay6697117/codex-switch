@@ -11,6 +11,8 @@ import type {
   SwitchAccountInput,
   SwitchAccountResult,
   UsageCollection,
+  WarmupAccountResult,
+  WarmupAllResult,
 } from "../contracts";
 import {
   cancelOAuthLoginViaWails,
@@ -25,6 +27,8 @@ import {
   startOAuthLoginViaWails,
   subscribeToRuntimeEvent,
   switchAccountViaWails,
+  warmupAccountViaWails,
+  warmupAllAccountsViaWails,
 } from "./bridge";
 
 export interface BootstrapService {
@@ -60,12 +64,18 @@ export interface UsageService {
   refreshAll(): Promise<UsageCollection>;
 }
 
+export interface WarmupService {
+  run(accountId: string): Promise<WarmupAccountResult>;
+  runAll(): Promise<WarmupAllResult>;
+}
+
 export interface AppServices {
   bootstrap: BootstrapService;
   accounts: AccountsService;
   process: ProcessService;
   oauth: OAuthService;
   usage: UsageService;
+  warmup: WarmupService;
   events?: RuntimeEventsService;
 }
 
@@ -91,6 +101,10 @@ export function createAppServices(): AppServices {
     usage: {
       get: getAccountUsageViaWails,
       refreshAll: refreshAllUsageViaWails,
+    },
+    warmup: {
+      run: warmupAccountViaWails,
+      runAll: warmupAllAccountsViaWails,
     },
     events: {
       subscribe: subscribeToRuntimeEvent,
