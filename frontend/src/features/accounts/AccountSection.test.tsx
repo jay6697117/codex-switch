@@ -11,6 +11,8 @@ import type {
   ProcessStatus,
   SwitchAccountResult,
   UsageCollection,
+  WarmupAccountResult,
+  WarmupAllResult,
 } from "../../lib/contracts";
 import type { AppServices } from "../../lib/wails/services";
 
@@ -57,9 +59,11 @@ function createServices(options?: {
   switchResult?: SwitchAccountResult;
   usageAllResult?: UsageCollection;
   usageById?: Record<string, AccountUsageSnapshot>;
+  warmupById?: Record<string, WarmupAccountResult>;
+  warmupAllResult?: WarmupAllResult;
   oauthStartResult?: { authUrl: string; callbackPort: number; pending: boolean };
   oauthCompleteResult?: AccountsSnapshot;
-}): Pick<AppServices, "accounts" | "process" | "oauth" | "usage"> {
+}): Pick<AppServices, "accounts" | "process" | "oauth" | "usage" | "warmup"> {
   const snapshot = options?.snapshot ?? baseSnapshot;
   const processStatuses = options?.processStatuses ?? [idleProcessStatus];
   const renameResult =
@@ -117,6 +121,38 @@ function createServices(options?: {
     "acc-active": usageAllResult.items[0] as AccountUsageSnapshot,
     "acc-side": usageAllResult.items[1] as AccountUsageSnapshot,
   };
+  const warmupById =
+    options?.warmupById ??
+    ({
+      "acc-active": {
+        accountId: "acc-active",
+        status: "success",
+        completedAt: "2026-03-11T12:00:00Z",
+        availability: {
+          isAvailable: true,
+        },
+      },
+      "acc-side": {
+        accountId: "acc-side",
+        status: "success",
+        completedAt: "2026-03-11T12:00:00Z",
+        availability: {
+          isAvailable: true,
+        },
+      },
+    } satisfies Record<string, WarmupAccountResult>);
+  const warmupAllResult =
+    options?.warmupAllResult ??
+    ({
+      items: Object.values(warmupById),
+      summary: {
+        totalAccounts: snapshot.accounts.length,
+        eligibleAccounts: snapshot.accounts.length,
+        successfulAccounts: snapshot.accounts.length,
+        failedAccounts: 0,
+        skippedAccounts: 0,
+      },
+    } satisfies WarmupAllResult);
   const oauthStartResult =
     options?.oauthStartResult ?? {
       authUrl: "https://auth.openai.com/oauth/authorize?state=abc",
@@ -167,11 +203,15 @@ function createServices(options?: {
       get: vi.fn(async (accountId: string) => usageById[accountId]),
       refreshAll: vi.fn().mockResolvedValue(usageAllResult),
     },
+    warmup: {
+      run: vi.fn(async (accountId: string) => warmupById[accountId]),
+      runAll: vi.fn().mockResolvedValue(warmupAllResult),
+    },
   };
 }
 
 async function renderAccountSection(
-  services: Pick<AppServices, "accounts" | "process" | "oauth" | "usage">,
+  services: Pick<AppServices, "accounts" | "process" | "oauth" | "usage" | "warmup">,
   options?: {
     useFakeTimers?: boolean;
   },
@@ -194,6 +234,119 @@ async function renderAccountSection(
 describe("AccountSection", () => {
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  test("warms a single account with local loading and writes back latest result", async () => {
+    const warmupControl: {
+      resolve?: (value: WarmupAccountResult) => void;
+    } = {};
+    const services = createServices();
+    services.warmup.run = vi.fn(
+      () =>
+        new Promise<WarmupAccountResult>((resolve) => {
+          warmupControl.resolve = resolve;
+        }),
+    );
+
+    const { user } = await renderAccountSection(services);
+
+    await screen.findByText("Work Account");
+    await user.click(screen.getByRole("button", { name: "Warm up Side Project" }));
+
+    expect(services.warmup.run).toHaveBeenCalledWith("acc-side");
+    expect(screen.getByRole("button", { name: "Warm up Side Project" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Warm up all eligible accounts" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Warm up Work Account" })).toBeEnabled();
+
+    if (!warmupControl.resolve) {
+      throw new Error("Warmup resolver was not captured");
+    }
+
+    warmupControl.resolve({
+      accountId: "acc-side",
+      status: "success",
+      completedAt: "2026-03-11T12:05:00Z",
+      availability: {
+        isAvailable: true,
+      },
+    });
+
+    expect(await screen.findByText("Warm-up sent for Side Project.")).toBeInTheDocument();
+    expect(await screen.findByText("The latest manual warm-up completed successfully.")).toBeInTheDocument();
+  });
+
+  test("shows disabled reason when manual warmup is unavailable", async () => {
+    const services = createServices({
+      snapshot: {
+        ...baseSnapshot,
+        accounts: baseSnapshot.accounts.map((account) =>
+          account.id === "acc-side"
+            ? {
+                ...account,
+                warmupAvailability: {
+                  isAvailable: false,
+                  reasonCode: "warmup.credentials_missing",
+                },
+              }
+            : account,
+        ),
+      },
+    });
+
+    await renderAccountSection(services);
+
+    await screen.findByText("Side Project");
+    expect(screen.getByRole("button", { name: "Warm up Side Project" })).toBeDisabled();
+    expect(
+      screen.getByText("This account does not have usable credentials for manual warm-up."),
+    ).toBeInTheDocument();
+  });
+
+  test("warms all eligible accounts and writes back mixed results", async () => {
+    const services = createServices({
+      warmupAllResult: {
+        items: [
+          {
+            accountId: "acc-active",
+            status: "success",
+            completedAt: "2026-03-11T12:10:00Z",
+            availability: {
+              isAvailable: true,
+            },
+          },
+          {
+            accountId: "acc-side",
+            status: "failed",
+            completedAt: "2026-03-11T12:10:00Z",
+            availability: {
+              isAvailable: true,
+            },
+            failureCode: "warmup.request_failed",
+          },
+        ],
+        summary: {
+          totalAccounts: 2,
+          eligibleAccounts: 2,
+          successfulAccounts: 1,
+          failedAccounts: 1,
+          skippedAccounts: 0,
+        },
+      },
+    });
+    const { user } = await renderAccountSection(services);
+
+    await screen.findByText("Work Account");
+    await user.click(screen.getByRole("button", { name: "Warm up all eligible accounts" }));
+
+    await waitFor(() => {
+      expect(services.warmup.runAll).toHaveBeenCalledTimes(1);
+    });
+    expect(
+      await screen.findByText("Warmed 1 of 2 eligible accounts. 1 failed, 0 unavailable."),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText("The warm-up request did not complete successfully."),
+    ).toBeInTheDocument();
   });
 
   test("renders active and inactive accounts with process visibility", async () => {
