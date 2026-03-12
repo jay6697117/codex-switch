@@ -172,6 +172,19 @@ describe("SettingsSection", () => {
     expect(await screen.findByText("Passphrases do not match.")).toBeInTheDocument();
   });
 
+  test("exports a full backup through the typed facade and shows success feedback", async () => {
+    const services = buildSettingsServices();
+    const { user } = await renderSettingsSection(services);
+
+    await user.click(await screen.findByRole("button", { name: "Export full backup" }));
+
+    expect(services.backup.selectFullExportPath).toHaveBeenCalledTimes(1);
+    expect(services.backup.exportFull).toHaveBeenCalledWith({
+      path: "/tmp/export.cswf",
+    });
+    expect(await screen.findByText("Full backup exported successfully.")).toBeInTheDocument();
+  });
+
   test("retries full import with the same path after passphrase is required", async () => {
     const services = buildSettingsServices();
     const onBackupImported = vi.fn();

@@ -236,10 +236,11 @@ function createServices(options?: {
 async function renderAccountSection(
   services: Pick<AppServices, "accounts" | "process" | "oauth" | "usage" | "warmup">,
   options?: {
+    locale?: "en-US" | "zh-CN";
     useFakeTimers?: boolean;
   },
 ) {
-  const i18n = await createAppI18n("en-US");
+  const i18n = await createAppI18n(options?.locale ?? "en-US");
 
   render(
     <I18nextProvider i18n={i18n}>
@@ -523,6 +524,33 @@ describe("AccountSection", () => {
     });
     expect(screen.queryByRole("dialog", { name: "Restart Codex before switching?" })).not.toBeInTheDocument();
     expect(await screen.findByText("Active account switched to Side Project.")).toBeInTheDocument();
+  });
+
+  test("renders localized success feedback for account switching in zh-CN", async () => {
+    const services = createServices({
+      processStatuses: [idleProcessStatus, idleProcessStatus, idleProcessStatus],
+    });
+    services.accounts.switch = vi.fn().mockResolvedValue({
+      data: {
+        restartPerformed: false,
+        accounts: {
+          ...baseSnapshot,
+          activeAccountId: "acc-side",
+        },
+      },
+      message: {
+        code: "accounts.switch_success",
+        args: {
+          name: "Side Project",
+        },
+      },
+    });
+    const { user } = await renderAccountSection(services, { locale: "zh-CN" });
+
+    await screen.findByText("Work Account");
+    await user.click(screen.getByRole("button", { name: "切换到 Side Project" }));
+
+    expect(await screen.findByText("当前活跃账号已切换为 Side Project。")).toBeInTheDocument();
   });
 
   test("applies per-account and global masking without persisting state", async () => {

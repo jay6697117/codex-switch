@@ -41,9 +41,9 @@ created: 2026-03-12
 | 06-01-01 | 01 | 1 | I18N-02 | unit | `cd frontend && npm test` | ✅ | ⬜ pending |
 | 06-01-02 | 01 | 1 | I18N-05 | unit | `go test ./... && (cd frontend && npm test)` | ✅ | ⬜ pending |
 | 06-01-03 | 01 | 1 | AUTH-05, I18N-02 | integration | `cd frontend && npm test` | ✅ | ⬜ pending |
-| 06-02-01 | 02 | 2 | QUAL-01 | unit | `go test ./...` | ✅ | ⬜ pending |
-| 06-02-02 | 02 | 2 | QUAL-01, I18N-02 | component | `cd frontend && npm test` | ✅ | ⬜ pending |
-| 06-02-03 | 02 | 2 | QUAL-01, AUTH-05 | e2e | `cd frontend && npm run e2e` | ✅ | ⬜ pending |
+| 06-02-01 | 02 | 2 | QUAL-01 | unit | `go test ./...` | ✅ | ✅ green |
+| 06-02-02 | 02 | 2 | QUAL-01, I18N-02 | component | `cd frontend && npm test` | ✅ | ✅ green |
+| 06-02-03 | 02 | 2 | QUAL-01, AUTH-05 | e2e | `cd frontend && npm run e2e` | ✅ | ✅ green |
 | 06-03-01 | 03 | 3 | QUAL-02 | build | `gh workflow run <macos-release-workflow> --ref <release-ref>` | ❌ W0 | ⬜ pending |
 | 06-03-02 | 03 | 3 | QUAL-02 | workflow | `gh run watch <release-run-id>` | ❌ W0 | ⬜ pending |
 | 06-03-03 | 03 | 3 | QUAL-02, QUAL-01 | artifact | `gh release download <tag> --pattern '*.dmg' --pattern 'checksums.txt' && shasum -a 256 -c checksums.txt` | ❌ W0 | ⬜ pending |

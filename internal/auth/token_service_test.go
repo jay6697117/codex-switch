@@ -2,11 +2,13 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"testing"
 	"time"
 
 	"codex-switch/internal/accounts"
+	"codex-switch/internal/contracts"
 	"codex-switch/internal/switching"
 
 	"github.com/stretchr/testify/require"
@@ -109,6 +111,61 @@ func TestTokenServiceEnsureFreshLeavesFreshTokenUntouched(t *testing.T) {
 	require.Equal(t, "refresh-old", account.Auth.ChatGPT.RefreshToken)
 }
 
+func TestTokenServiceRefreshReturnsAccountNotFoundForUnknownAccount(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 3, 11, 18, 0, 0, 0, time.UTC)
+	service := NewTokenService(
+		&fakeTokenRepository{
+			store: accounts.AccountsStore{
+				Version: 1,
+				Accounts: []accounts.AccountRecord{
+					newTokenChatGPTAccount(t, "acct-active", "Work Account", now),
+				},
+			},
+		},
+		&fakeTokenAuthStore{},
+		&fakeRefreshExchanger{},
+	)
+
+	_, err := service.Refresh(context.Background(), "acct-missing")
+	require.Error(t, err)
+
+	var appErr contracts.AppError
+	require.ErrorAs(t, err, &appErr)
+	require.Equal(t, "auth.account_not_found", appErr.Code)
+}
+
+func TestTokenServiceRefreshReturnsRefreshFailedWhenTokenExchangeFails(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 3, 11, 18, 30, 0, 0, time.UTC)
+	repository := &fakeTokenRepository{
+		store: accounts.AccountsStore{
+			Version:         1,
+			ActiveAccountID: stringPointer("acct-active"),
+			Accounts: []accounts.AccountRecord{
+				newTokenChatGPTAccount(t, "acct-active", "Work Account", now.Add(-time.Hour)),
+			},
+		},
+	}
+	authStore := &fakeTokenAuthStore{}
+	exchanger := &fakeRefreshExchanger{
+		err: errors.New("refresh exchange failed"),
+	}
+
+	service := NewTokenService(repository, authStore, exchanger)
+	service.now = func() time.Time { return now }
+
+	_, err := service.Refresh(context.Background(), "acct-active")
+	require.Error(t, err)
+
+	var appErr contracts.AppError
+	require.ErrorAs(t, err, &appErr)
+	require.Equal(t, "auth.refresh_failed", appErr.Code)
+	require.Nil(t, authStore.written)
+}
+
 type fakeRefreshExchanger struct {
 	result        RefreshResult
 	err           error
@@ -177,4 +234,30 @@ func (s *fakeTokenAuthStore) Restore(_ context.Context, previous *switching.Auth
 func fakeExpiringJWT(t *testing.T, expiry time.Time) string {
 	t.Helper()
 	return fakeJWT(t, `{"exp":`+strconv.FormatInt(expiry.Unix(), 10)+`}`)
+}
+
+func newTokenChatGPTAccount(
+	t *testing.T,
+	id string,
+	name string,
+	timestamp time.Time,
+) accounts.AccountRecord {
+	t.Helper()
+
+	return accounts.AccountRecord{
+		ID:          id,
+		DisplayName: name,
+		Email:       "work@example.com",
+		Auth: accounts.AccountAuth{
+			Kind: "chatgpt",
+			ChatGPT: &accounts.ChatGPTCredentials{
+				IDToken:      fakeJWT(t, `{"email":"work@example.com","https://api.openai.com/auth":{"chatgpt_account_id":"acct-openai"}}`),
+				AccessToken:  fakeExpiringJWT(t, timestamp.Add(30*time.Second)),
+				RefreshToken: "refresh-token",
+				AccountID:    stringPointer("acct-openai"),
+			},
+		},
+		CreatedAt: timestamp,
+		UpdatedAt: timestamp,
+	}
 }

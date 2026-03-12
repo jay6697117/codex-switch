@@ -191,6 +191,14 @@ test.beforeEach(async ({ page }) => {
                     accounts,
                   },
                 },
+                message: {
+                  code: "accounts.switch_success",
+                  args: {
+                    name:
+                      accounts.find((account) => account.id === input.accountId)?.displayName ??
+                      input.accountId,
+                  },
+                },
               };
             },
             StartOAuthLogin: async (input: { accountName: string }) => ({
@@ -225,6 +233,12 @@ test.beforeEach(async ({ page }) => {
                 data: {
                   activeAccountId: "acc-active",
                   accounts,
+                },
+                message: {
+                  code: "auth.account_added",
+                  args: {
+                    name: "New OAuth Account",
+                  },
                 },
               };
             },
@@ -435,6 +449,7 @@ test("blocks switching until confirmation and does not perform a silent switch",
         }).__switchCalls,
     ),
   ).resolves.toEqual([{ accountId: "acc-side", confirmRestart: true }]);
+  await expect(page.getByText("当前活跃账号已切换为 Side Project。")).toBeVisible();
 });
 
 test("supports oauth add-account flow and usage refresh from the shell", async ({ page }) => {
@@ -454,7 +469,8 @@ test("supports oauth add-account flow and usage refresh from the shell", async (
   ).resolves.toBe(1);
 
   await page.getByRole("button", { name: "完成登录" }).click();
-  await expect(page.getByText("New OAuth Account")).toBeVisible();
+  await expect(page.getByRole("button", { name: "编辑 New OAuth Account" })).toBeVisible();
+  await expect(page.getByText("已将 New OAuth Account 添加到本地账号仓库。")).toBeVisible();
 
   await page.getByRole("button", { name: "刷新 Work Account 的用量" }).click();
   await expect(
@@ -554,4 +570,15 @@ test("retries full backup import with the same path after passphrase is required
     { path: "/tmp/import.cswf", passphrase: "secret-value" },
   ]);
   await expect(page.getByText("Full Backup Account")).toBeVisible();
+});
+
+test("exports a full backup after switching locale to english", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByLabel("语言").selectOption("en-US");
+  await page.getByRole("button", { name: "保存偏好设置" }).click();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Export full backup" }).click();
+  await expect(page.getByText("Full backup exported successfully.")).toBeVisible();
 });

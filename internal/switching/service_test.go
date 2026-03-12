@@ -131,6 +131,52 @@ func TestSwitchAccountRollsBackWhenRestartFails(t *testing.T) {
 	require.Equal(t, "old-id", authStore.restored.Tokens.IDToken)
 }
 
+func TestSwitchAccountReturnsStopFailedWhenProcessTerminationFails(t *testing.T) {
+	t.Parallel()
+
+	repo := &fakeRepository{
+		store: accounts.AccountsStore{
+			Version:         1,
+			ActiveAccountID: stringPointer("acct-active"),
+			Accounts: []accounts.AccountRecord{
+				newChatGPTAccount("acct-active", "Primary"),
+				newChatGPTAccount("acct-target", "Target"),
+			},
+		},
+	}
+
+	authStore := &fakeAuthFileStore{
+		current: &AuthFile{
+			Tokens: &TokenData{
+				IDToken:      "old-id",
+				AccessToken:  "old-access",
+				RefreshToken: "old-refresh",
+			},
+		},
+	}
+	processController := &fakeProcessController{
+		detected: []platformprocess.Descriptor{
+			{PID: 10, Command: "codex", IsBackground: false},
+		},
+		stopErr: errors.New("stop failed"),
+	}
+
+	service := NewService(repo, authStore, processController)
+
+	_, err := service.SwitchAccount(context.Background(), contracts.SwitchAccountInput{
+		AccountID:      "acct-target",
+		ConfirmRestart: true,
+	})
+
+	require.Error(t, err)
+	var appErr contracts.AppError
+	require.ErrorAs(t, err, &appErr)
+	require.Equal(t, "process.stop_failed", appErr.Code)
+	require.Nil(t, authStore.written)
+	require.Nil(t, authStore.restored)
+	require.Equal(t, "acct-active", dereference(repo.store.ActiveAccountID))
+}
+
 func TestSwitchAccountRollsBackWhenActiveAccountSaveFails(t *testing.T) {
 	t.Parallel()
 
