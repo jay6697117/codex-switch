@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 4 of 6 (Warmup Automation)
-Plan: 1 of 3 completed in current phase
-Status: Phase 4 in progress; 04-01 manual warm-up end-to-end completed, 04-02 scheduler plan ready to execute
-Last activity: 2026-03-12 — Executed 04-01 manual warm-up service, Wails contracts, and account-shell actions
+Plan: 2 of 3 completed in current phase
+Status: Phase 4 in progress; 04-01 and 04-02 are complete, and 04-03 missed-run prompt and runtime feedback work is next
+Last activity: 2026-03-12 — Completed 04-02 schedule persistence, scheduler runtime, and dedicated Warmup configuration UI
 
-Progress: [██████░░░░] 63%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -30,10 +30,10 @@ Progress: [██████░░░░] 63%
 | 1 | 4 | n/a | n/a |
 | 2 | 3 | n/a | n/a |
 | 3 | 3 | n/a | n/a |
-| 4 | 1 | n/a | n/a |
+| 4 | 2 | n/a | n/a |
 
 **Recent Trend:**
-- Last 5 plans: 02-03, 03-01, 03-02, 03-03, 04-01
+- Last 5 plans: 03-01, 03-02, 03-03, 04-01, 04-02
 - Trend: Steady
 
 ## Accumulated Context
@@ -57,18 +57,20 @@ Recent decisions affecting current work:
 - [Phase 4]: Warm-up availability is attached to account snapshots so the client never infers provider rules
 - [Phase 4]: Manual warm-up results are normalized into per-account success/failed/skipped payloads instead of raw provider errors
 - [Phase 4]: Account shell keeps recent manual warm-up feedback local and does not mark scheduled completion state
+- [Phase 4]: Schedule status is read through the scheduler runtime so derived next-run and missed-run semantics stay consistent
+- [Phase 4]: Warmup schedule configuration lives in a dedicated Warmup section and reuses shared account snapshots instead of reloading accounts
 
 ### Pending Todos
 
-- Execute 04-02: implement scheduler, local-time persistence, and missed-run recovery logic
+- Execute 04-03: wire missed-run prompt UI, runtime events, and localized feedback for scheduled warm-up
 
 ### Blockers/Concerns
 
 - Backup compatibility with old origin exports must be decided before Phase 5 implementation starts
-- Phase 4 execution must validate DST/local-clock edge cases and packaged Wails runtime-event delivery called out in `04-VALIDATION.md`
+- Phase 4 execution still needs explicit validation for DST/local-clock edge cases and packaged Wails runtime-event delivery called out in `04-VALIDATION.md`
 
 ## Session Continuity
 
-Last session: 2026-03-12 01:08 CST
-Stopped at: 04-01 completed with summary written; next action is 04-02 execution
+Last session: 2026-03-12 10:14 CST
+Stopped at: 04-02 completed with summary written; next action is 04-03 execution
 Resume file: None
