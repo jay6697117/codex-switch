@@ -84,6 +84,12 @@ export interface WarmupAllResult {
   summary: WarmupSummary;
 }
 
+export interface WarmupRuntimeEvent {
+  trigger: "scheduled" | "missed_prompt";
+  completedAt: string;
+  result: WarmupAllResult;
+}
+
 export interface WarmupSchedule {
   enabled: boolean;
   localTime: string;

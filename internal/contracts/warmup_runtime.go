@@ -8,6 +8,7 @@ const (
 )
 
 type WarmupRuntimeEvent struct {
-	Summary WarmupSummary `json:"summary"`
-	Trigger string        `json:"trigger"`
+	Trigger     string          `json:"trigger"`
+	CompletedAt string          `json:"completedAt"`
+	Result      WarmupAllResult `json:"result"`
 }

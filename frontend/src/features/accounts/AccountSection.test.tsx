@@ -220,6 +220,8 @@ function createServices(options?: {
       runAll: vi.fn().mockResolvedValue(warmupAllResult),
       loadScheduleStatus: vi.fn().mockResolvedValue(defaultWarmupScheduleStatus),
       saveSchedule: vi.fn().mockResolvedValue(defaultWarmupScheduleStatus),
+      dismissMissedRunToday: vi.fn().mockResolvedValue(defaultWarmupScheduleStatus),
+      runMissedWarmupNow: vi.fn().mockResolvedValue(defaultWarmupScheduleStatus),
     },
   };
 }

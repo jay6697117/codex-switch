@@ -2,7 +2,6 @@ import type {
   AccountsSnapshot,
   AccountUsageSnapshot,
   BootstrapPayload,
-  EventEnvelope,
   OAuthCancelResult,
   OAuthLoginInfo,
   ProcessStatus,
@@ -20,6 +19,7 @@ import {
   cancelOAuthLoginViaWails,
   completeOAuthLoginViaWails,
   deleteAccountViaWails,
+  dismissMissedRunTodayViaWails,
   getAccountUsageViaWails,
   loadWarmupScheduleStatusViaWails,
   loadAccountsViaWails,
@@ -31,6 +31,7 @@ import {
   startOAuthLoginViaWails,
   subscribeToRuntimeEvent,
   switchAccountViaWails,
+  runMissedWarmupNowViaWails,
   warmupAccountViaWails,
   warmupAllAccountsViaWails,
 } from "./bridge";
@@ -40,10 +41,7 @@ export interface BootstrapService {
 }
 
 export interface RuntimeEventsService {
-  subscribe<T>(
-    eventName: string,
-    handler: (payload: EventEnvelope<T>) => void,
-  ): () => void;
+  subscribe<T>(eventName: string, handler: (payload: T) => void): () => void;
 }
 
 export interface AccountsService {
@@ -73,6 +71,8 @@ export interface WarmupService {
   runAll(): Promise<WarmupAllResult>;
   loadScheduleStatus(): Promise<WarmupScheduleStatus>;
   saveSchedule(input: WarmupScheduleInput): Promise<WarmupScheduleStatus>;
+  dismissMissedRunToday(): Promise<WarmupScheduleStatus>;
+  runMissedWarmupNow(): Promise<WarmupScheduleStatus>;
 }
 
 export interface AppServices {
@@ -113,6 +113,8 @@ export function createAppServices(): AppServices {
       runAll: warmupAllAccountsViaWails,
       loadScheduleStatus: loadWarmupScheduleStatusViaWails,
       saveSchedule: saveWarmupScheduleViaWails,
+      dismissMissedRunToday: dismissMissedRunTodayViaWails,
+      runMissedWarmupNow: runMissedWarmupNowViaWails,
     },
     events: {
       subscribe: subscribeToRuntimeEvent,

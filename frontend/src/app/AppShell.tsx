@@ -2,11 +2,20 @@ import { useEffect, useState } from "react";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import type { i18n } from "i18next";
 
-import type { AccountSummary, AccountsSnapshot, BootstrapPayload } from "../lib/contracts";
+import type {
+  AccountSummary,
+  AccountsSnapshot,
+  BootstrapPayload,
+  WarmupRuntimeEvent,
+} from "../lib/contracts";
 import type { AppServices } from "../lib/wails/services";
 import { applyBootstrapLocale } from "../i18n/createAppI18n";
 import { AccountSection } from "../features/accounts/AccountSection";
 import { WarmupSection } from "../features/warmup/WarmupSection";
+import {
+  createRuntimeWarmupFeedback,
+  type WarmupShellFeedback,
+} from "../features/warmup/feedback";
 import { CapabilityGrid } from "../features/shell/CapabilityGrid";
 import { ShellHero } from "../features/shell/ShellHero";
 
@@ -24,7 +33,8 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
   const [bootstrap, setBootstrap] = useState<BootstrapPayload | null>(null);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [errorCode, setErrorCode] = useState<string | null>(null);
-  const { t } = useTranslation(["errors", "shell"]);
+  const [warmupFeedback, setWarmupFeedback] = useState<WarmupShellFeedback | null>(null);
+  const { t } = useTranslation(["errors", "shell", "warmup"]);
 
   useEffect(() => {
     let active = true;
@@ -53,6 +63,19 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
     };
   }, [i18n, services]);
 
+  useEffect(() => {
+    if (!services.events) {
+      return undefined;
+    }
+
+    return services.events.subscribe<WarmupRuntimeEvent>(
+      "warmup:scheduledResult",
+      (event) => {
+        setWarmupFeedback(createRuntimeWarmupFeedback(event, t));
+      },
+    );
+  }, [services, t]);
+
   if (errorCode) {
     return (
       <main className="app-shell">
@@ -72,13 +95,21 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
   return (
     <main className="app-shell">
       <ShellHero bootstrap={bootstrap} />
+      {warmupFeedback ? (
+        <section
+          className={`accounts-feedback-banner accounts-feedback-${warmupFeedback.toast.tone}`}
+        >
+          {warmupFeedback.toast.message}
+        </section>
+      ) : null}
       <AccountSection
         onSnapshotChange={(snapshot: AccountsSnapshot) => {
           setAccounts(snapshot.accounts);
         }}
+        onWarmupFeedback={setWarmupFeedback}
         services={services}
       />
-      <WarmupSection accounts={accounts} services={services} />
+      <WarmupSection accounts={accounts} feedback={warmupFeedback} services={services} />
       <CapabilityGrid />
     </main>
   );

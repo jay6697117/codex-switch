@@ -3,7 +3,6 @@ import type {
   AccountUsageSnapshot,
   AppError,
   BootstrapPayload,
-  EventEnvelope,
   OAuthCancelResult,
   OAuthLoginInfo,
   ProcessStatus,
@@ -216,9 +215,29 @@ export async function saveWarmupScheduleViaWails(
   return unwrapEnvelope(await saveWarmupSchedule(input), "warmup.schedule_load_failed");
 }
 
+export async function dismissMissedRunTodayViaWails(): Promise<WarmupScheduleStatus> {
+  const dismissMissedRunToday = window.go?.main?.App?.DismissMissedRunToday;
+
+  if (!dismissMissedRunToday) {
+    throw { code: "warmup.schedule_load_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await dismissMissedRunToday(), "warmup.schedule_load_failed");
+}
+
+export async function runMissedWarmupNowViaWails(): Promise<WarmupScheduleStatus> {
+  const runMissedWarmupNow = window.go?.main?.App?.RunMissedWarmupNow;
+
+  if (!runMissedWarmupNow) {
+    throw { code: "warmup.execute_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await runMissedWarmupNow(), "warmup.execute_failed");
+}
+
 export function subscribeToRuntimeEvent<T>(
   eventName: string,
-  handler: (payload: EventEnvelope<T>) => void,
+  handler: (payload: T) => void,
 ): () => void {
   const subscribe = window.runtime?.EventsOn;
 

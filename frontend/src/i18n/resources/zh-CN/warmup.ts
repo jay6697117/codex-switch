@@ -26,9 +26,34 @@ export const warmup = {
   feedbackSuccessAll: "已为全部 {{successful}} 个可用账号发送 warm-up 请求。",
   feedbackMixedAll:
     "已处理 {{eligible}} 个可用账号中的 {{successful}} 个，失败 {{failed}} 个，不可用 {{skipped}} 个。",
+  feedbackScheduledSuccess: "已为全部 {{successful}} 个可用账号发送定时 warm-up 请求。",
+  feedbackScheduledMixed:
+    "定时 warm-up 已处理 {{eligible}} 个可用账号，其中成功 {{successful}} 个，失败 {{failed}} 个，不可用 {{skipped}} 个。",
+  feedbackScheduledUnavailable: "本次定时 warm-up 没有可执行的账号。",
+  feedbackMissedSuccess: "已为全部 {{successful}} 个可用账号发送补跑 warm-up 请求。",
+  feedbackMissedMixed:
+    "补跑 warm-up 已处理 {{eligible}} 个可用账号，其中成功 {{successful}} 个，失败 {{failed}} 个，不可用 {{skipped}} 个。",
+  feedbackMissedUnavailable: "本次补跑 warm-up 没有可执行的账号。",
   latestSuccessTitle: "最近一次手动 warm-up",
   latestSuccessBody: "最近一次手动 warm-up 已成功完成。",
   latestFailedTitle: "最近一次手动 warm-up",
   latestFailedBody: "最近一次手动 warm-up 返回了已归一化的失败结果。",
   unavailableTitle: "手动 warm-up 当前不可用",
+  recentScheduledTitle: "最近一次定时 warm-up",
+  recentScheduledSuccessBody: "本次每日 warm-up 已完成，共处理 {{eligible}} 个可用账号。",
+  recentScheduledMixedBody:
+    "本次每日 warm-up 已完成：成功 {{successful}} 个，失败 {{failed}} 个，不可用 {{skipped}} 个。",
+  recentScheduledUnavailable: "本次定时 warm-up 没有可执行的账号。",
+  recentMissedTitle: "最近一次补跑 warm-up",
+  recentMissedSuccessBody: "本次补跑 warm-up 已完成，共处理 {{eligible}} 个可用账号。",
+  recentMissedMixedBody:
+    "本次补跑 warm-up 已完成：成功 {{successful}} 个，失败 {{failed}} 个，不可用 {{skipped}} 个。",
+  recentMissedUnavailable: "本次补跑 warm-up 没有可执行的账号。",
+  latestResultTitle: "最近一次 warm-up 结果",
+  missedPromptTitle: "错过了今日定时 warm-up",
+  missedPromptBody: "应用是在今日计划执行时间之后打开的。你可以现在补跑，或者今天不再提示。",
+  missedPromptRunNow: "立即补跑",
+  missedPromptRunningNow: "补跑中...",
+  missedPromptSkipToday: "今天跳过",
+  missedPromptSkippingToday: "跳过中...",
 };

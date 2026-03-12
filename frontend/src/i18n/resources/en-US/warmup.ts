@@ -26,9 +26,35 @@ export const warmup = {
   feedbackSuccessAll: "Warm-up sent for all {{successful}} eligible accounts.",
   feedbackMixedAll:
     "Warmed {{successful}} of {{eligible}} eligible accounts. {{failed}} failed, {{skipped}} unavailable.",
+  feedbackScheduledSuccess: "Scheduled warm-up sent for all {{successful}} eligible accounts.",
+  feedbackScheduledMixed:
+    "Scheduled warm-up processed {{eligible}} eligible accounts. {{successful}} succeeded, {{failed}} failed, {{skipped}} unavailable.",
+  feedbackScheduledUnavailable: "No eligible accounts were available for the scheduled warm-up.",
+  feedbackMissedSuccess: "Catch-up warm-up sent for all {{successful}} eligible accounts.",
+  feedbackMissedMixed:
+    "Catch-up warm-up processed {{eligible}} eligible accounts. {{successful}} succeeded, {{failed}} failed, {{skipped}} unavailable.",
+  feedbackMissedUnavailable: "No eligible accounts were available for the catch-up warm-up.",
   latestSuccessTitle: "Latest manual warm-up",
   latestSuccessBody: "The latest manual warm-up completed successfully.",
   latestFailedTitle: "Latest manual warm-up",
   latestFailedBody: "The latest manual warm-up returned a normalized failure.",
   unavailableTitle: "Manual warm-up unavailable",
+  recentScheduledTitle: "Latest scheduled warm-up",
+  recentScheduledSuccessBody: "The daily warm-up completed for {{eligible}} eligible accounts.",
+  recentScheduledMixedBody:
+    "The daily warm-up completed with {{successful}} success, {{failed}} failed, and {{skipped}} unavailable.",
+  recentScheduledUnavailable: "No eligible accounts were available for the scheduled warm-up.",
+  recentMissedTitle: "Latest catch-up warm-up",
+  recentMissedSuccessBody: "The catch-up warm-up completed for {{eligible}} eligible accounts.",
+  recentMissedMixedBody:
+    "The catch-up warm-up completed with {{successful}} success, {{failed}} failed, and {{skipped}} unavailable.",
+  recentMissedUnavailable: "No eligible accounts were available for the catch-up warm-up.",
+  latestResultTitle: "Latest warm-up result",
+  missedPromptTitle: "Missed scheduled warm-up",
+  missedPromptBody:
+    "The app opened after today's scheduled warm-up time. Run the catch-up now or skip the reminder for today.",
+  missedPromptRunNow: "Run Warmup Now",
+  missedPromptRunningNow: "Running Warmup...",
+  missedPromptSkipToday: "Skip Today",
+  missedPromptSkippingToday: "Skipping...",
 };

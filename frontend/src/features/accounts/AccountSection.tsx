@@ -17,6 +17,11 @@ import type {
 } from "../../lib/contracts";
 import type { AppServices } from "../../lib/wails/services";
 import { deriveAccountsView, toggleMaskedAccount } from "./model";
+import {
+  createManualAccountWarmupFeedback,
+  createManualAllWarmupFeedback,
+  type WarmupShellFeedback,
+} from "../warmup/feedback";
 
 const DELETE_CONFIRM_TIMEOUT_MS = 3_000;
 const MASKED_VALUE = "••••••••";
@@ -24,6 +29,7 @@ const MASKED_VALUE = "••••••••";
 interface AccountSectionProps {
   services: Pick<AppServices, "accounts" | "oauth" | "process" | "usage" | "warmup">;
   onSnapshotChange?: (snapshot: AccountsSnapshot) => void;
+  onWarmupFeedback?: (feedback: WarmupShellFeedback) => void;
 }
 
 interface WarmupFeedback {
@@ -465,7 +471,11 @@ function AccountCard({
   );
 }
 
-export function AccountSection({ services, onSnapshotChange }: AccountSectionProps) {
+export function AccountSection({
+  services,
+  onSnapshotChange,
+  onWarmupFeedback,
+}: AccountSectionProps) {
   const { t } = useTranslation(["accounts", "auth", "errors", "usage", "warmup"]);
   const [snapshot, setSnapshot] = useState<AccountsSnapshot | null>(null);
   const [processStatus, setProcessStatus] = useState<ProcessStatus | null>(null);
@@ -842,13 +852,13 @@ export function AccountSection({ services, onSnapshotChange }: AccountSectionPro
         ...current,
         [account.id]: result,
       }));
-      setWarmupFeedback(
-        getSingleWarmupFeedback(
-          result,
-          getActionName(account, allMasked || maskedAccountIds.has(account.id), t),
-          t,
-        ),
+      const feedback = createManualAccountWarmupFeedback(
+        result,
+        getActionName(account, allMasked || maskedAccountIds.has(account.id), t),
+        t,
       );
+      setWarmupFeedback(feedback.toast);
+      onWarmupFeedback?.(feedback);
       setErrorCode(null);
     } catch (error) {
       setErrorCode(getErrorCode(error, "warmup.execute_failed"));
@@ -891,7 +901,9 @@ export function AccountSection({ services, onSnapshotChange }: AccountSectionPro
         }
         return next;
       });
-      setWarmupFeedback(getAllWarmupFeedback(result, t));
+      const feedback = createManualAllWarmupFeedback(result, t);
+      setWarmupFeedback(feedback.toast);
+      onWarmupFeedback?.(feedback);
       setErrorCode(null);
     } catch (error) {
       setErrorCode(getErrorCode(error, "warmup.execute_failed"));

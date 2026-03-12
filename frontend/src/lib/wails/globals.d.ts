@@ -2,7 +2,6 @@ import type {
   AccountsSnapshot,
   AccountUsageSnapshot,
   BootstrapPayload,
-  EventEnvelope,
   OAuthCancelResult,
   OAuthLoginInfo,
   ProcessStatus,
@@ -38,6 +37,8 @@ declare global {
           SaveWarmupSchedule?: (
             input: WarmupScheduleInput,
           ) => Promise<ResultEnvelope<WarmupScheduleStatus>>;
+          DismissMissedRunToday?: () => Promise<ResultEnvelope<WarmupScheduleStatus>>;
+          RunMissedWarmupNow?: () => Promise<ResultEnvelope<WarmupScheduleStatus>>;
           RenameAccount?: (
             input: RenameAccountInput,
           ) => Promise<ResultEnvelope<AccountsSnapshot>>;
@@ -59,7 +60,7 @@ declare global {
       BrowserOpenURL?: (url: string) => void;
       EventsOn?: <T = unknown>(
         eventName: string,
-        callback: (payload: EventEnvelope<T>) => void,
+        callback: (payload: T) => void,
       ) => (() => void) | Promise<() => void>;
       EventsOff?: (eventName: string) => void;
     };

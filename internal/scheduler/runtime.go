@@ -111,8 +111,9 @@ func (r *Runtime) Check(ctx context.Context) error {
 	}
 
 	return r.eventSink.EmitWarmupEvent(ctx, contracts.WarmupRuntimeEvent{
-		Summary: mapWarmupSummary(result.Summary),
-		Trigger: WarmupRuntimeTriggerScheduled,
+		Trigger:     WarmupRuntimeTriggerScheduled,
+		CompletedAt: r.now().Format(time.RFC3339),
+		Result:      mapWarmupAllResult(result),
 	})
 }
 
@@ -145,8 +146,9 @@ func (r *Runtime) RunMissedWarmupNow(ctx context.Context) (warmup.WarmupAllResul
 		return warmup.WarmupAllResult{}, err
 	}
 	if err := r.eventSink.EmitWarmupEvent(ctx, contracts.WarmupRuntimeEvent{
-		Summary: mapWarmupSummary(result.Summary),
-		Trigger: WarmupRuntimeTriggerMissedPrompt,
+		Trigger:     WarmupRuntimeTriggerMissedPrompt,
+		CompletedAt: r.now().Format(time.RFC3339),
+		Result:      mapWarmupAllResult(result),
 	}); err != nil {
 		return warmup.WarmupAllResult{}, err
 	}
@@ -230,6 +232,27 @@ func mapWarmupSummary(input warmup.WarmupSummary) contracts.WarmupSummary {
 	}
 }
 
+func mapWarmupAllResult(input warmup.WarmupAllResult) contracts.WarmupAllResult {
+	items := make([]contracts.WarmupAccountResult, 0, len(input.Items))
+	for _, item := range input.Items {
+		items = append(items, contracts.WarmupAccountResult{
+			AccountID: item.AccountID,
+			Availability: contracts.WarmupAvailability{
+				IsAvailable: item.Availability.IsAvailable,
+				ReasonCode:  copyString(item.Availability.ReasonCode),
+			},
+			Status:      item.Status,
+			FailureCode: copyString(item.FailureCode),
+			CompletedAt: item.CompletedAt,
+		})
+	}
+
+	return contracts.WarmupAllResult{
+		Items:   items,
+		Summary: mapWarmupSummary(input.Summary),
+	}
+}
+
 func localDateString(value time.Time) string {
 	return value.Format("2006-01-02")
 }
@@ -249,4 +272,13 @@ func dereferenceDate(value *string) string {
 	}
 
 	return *value
+}
+
+func copyString(value *string) *string {
+	if value == nil {
+		return nil
+	}
+
+	copyValue := *value
+	return &copyValue
 }
