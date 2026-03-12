@@ -10,6 +10,7 @@ import type {
   AccountUsageSnapshot,
   AccountsSnapshot,
   AppError,
+  AppMessage,
   ProcessStatus,
   UsageCollection,
   WarmupAccountResult,
@@ -33,7 +34,7 @@ interface AccountSectionProps {
   revision?: number;
 }
 
-interface WarmupFeedback {
+interface SectionFeedback {
   message: string;
   tone: "success" | "error" | "info";
 }
@@ -170,7 +171,7 @@ function getWarmupInfoCopy(
   result: WarmupAccountResult | undefined,
   unavailableReasonCode: string | undefined,
   t: (key: string, options?: Record<string, unknown>) => string,
-): WarmupFeedback | null {
+): SectionFeedback | null {
   if (result?.status === "success") {
     return {
       message: t("warmup:latestSuccessBody"),
@@ -200,7 +201,7 @@ function getSingleWarmupFeedback(
   result: WarmupAccountResult,
   accountName: string,
   t: (key: string, options?: Record<string, unknown>) => string,
-): WarmupFeedback {
+): SectionFeedback {
   if (result.status === "success") {
     return {
       message: t("warmup:feedbackSuccessSingle", { name: accountName }),
@@ -224,7 +225,7 @@ function getSingleWarmupFeedback(
 function getAllWarmupFeedback(
   result: WarmupAllResult,
   t: (key: string, options?: Record<string, unknown>) => string,
-): WarmupFeedback {
+): SectionFeedback {
   if (result.summary.eligibleAccounts === 0) {
     return {
       message: t("warmup:runAllUnavailable"),
@@ -250,6 +251,25 @@ function getAllWarmupFeedback(
     }),
     tone: result.summary.successfulAccounts > 0 ? "info" : "error",
   };
+}
+
+function translateAppMessage(
+  message: AppMessage | undefined,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string | null {
+  if (!message?.code) {
+    return null;
+  }
+
+  const separatorIndex = message.code.indexOf(".");
+  if (separatorIndex <= 0 || separatorIndex === message.code.length - 1) {
+    return t(message.code, message.args);
+  }
+
+  const namespace = message.code.slice(0, separatorIndex);
+  const key = message.code.slice(separatorIndex + 1);
+
+  return t(`${namespace}:${key}`, message.args);
 }
 
 function SwitchConfirmationDialog({
@@ -488,7 +508,7 @@ export function AccountSection({
     Record<string, WarmupAccountResult>
   >({});
   const [errorCode, setErrorCode] = useState<string | null>(null);
-  const [warmupFeedback, setWarmupFeedback] = useState<WarmupFeedback | null>(null);
+  const [sectionFeedback, setSectionFeedback] = useState<SectionFeedback | null>(null);
   const [allMasked, setAllMasked] = useState(false);
   const [maskedAccountIds, setMaskedAccountIds] = useState<Set<string>>(() => new Set());
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
@@ -731,12 +751,23 @@ export function AccountSection({
         confirmRestart,
       });
 
-      applySnapshot(result.accounts);
+      applySnapshot(result.data.accounts);
       setSwitchCandidateAccountId(null);
       setSwitchConfirmOpen(false);
+      const successMessage = translateAppMessage(result.message, t);
+      if (successMessage) {
+        setSectionFeedback({
+          message: successMessage,
+          tone: "success",
+        });
+      }
       setErrorCode(null);
-      await Promise.all([refreshProcessStatus(), refreshUsageForAccount(accountId, result.accounts)]);
+      await Promise.all([
+        refreshProcessStatus(),
+        refreshUsageForAccount(accountId, result.data.accounts),
+      ]);
     } catch (error) {
+      setSectionFeedback(null);
       setErrorCode(getErrorCode(error, "switch.active_update_failed"));
     } finally {
       setSwitchingAccountId(null);
@@ -770,6 +801,7 @@ export function AccountSection({
     }
 
     setOAuthPhase("starting");
+    setSectionFeedback(null);
     setErrorCode(null);
 
     try {
@@ -827,12 +859,20 @@ export function AccountSection({
 
     try {
       const nextSnapshot = await services.oauth.complete();
-      applySnapshot(nextSnapshot);
-      await Promise.all([refreshProcessStatus(), refreshAllUsage(nextSnapshot)]);
+      applySnapshot(nextSnapshot.data);
+      await Promise.all([refreshProcessStatus(), refreshAllUsage(nextSnapshot.data)]);
+      const successMessage = translateAppMessage(nextSnapshot.message, t);
+      if (successMessage) {
+        setSectionFeedback({
+          message: successMessage,
+          tone: "success",
+        });
+      }
       setErrorCode(null);
       resetOAuthState();
     } catch (error) {
       setOAuthPhase("waiting");
+      setSectionFeedback(null);
       setErrorCode(getErrorCode(error, "oauth.complete_failed"));
     }
   };
@@ -859,7 +899,7 @@ export function AccountSection({
         getActionName(account, allMasked || maskedAccountIds.has(account.id), t),
         t,
       );
-      setWarmupFeedback(feedback.toast);
+      setSectionFeedback(feedback.toast);
       onWarmupFeedback?.(feedback);
       setErrorCode(null);
     } catch (error) {
@@ -882,7 +922,7 @@ export function AccountSection({
       (account) => account.warmupAvailability.isAvailable,
     );
     if (!hasEligibleAccount) {
-      setWarmupFeedback(getAllWarmupFeedback({ items: [], summary: {
+      setSectionFeedback(getAllWarmupFeedback({ items: [], summary: {
         totalAccounts: snapshot.accounts.length,
         eligibleAccounts: 0,
         successfulAccounts: 0,
@@ -904,7 +944,7 @@ export function AccountSection({
         return next;
       });
       const feedback = createManualAllWarmupFeedback(result, t);
-      setWarmupFeedback(feedback.toast);
+      setSectionFeedback(feedback.toast);
       onWarmupFeedback?.(feedback);
       setErrorCode(null);
     } catch (error) {
@@ -982,9 +1022,9 @@ export function AccountSection({
       </div>
 
       {errorCode ? <p className="accounts-error-banner">{t(`errors:${errorCode}`)}</p> : null}
-      {warmupFeedback ? (
-        <p className={`accounts-feedback-banner accounts-feedback-${warmupFeedback.tone}`}>
-          {warmupFeedback.message}
+      {sectionFeedback ? (
+        <p className={`accounts-feedback-banner accounts-feedback-${sectionFeedback.tone}`}>
+          {sectionFeedback.message}
         </p>
       ) : null}
 

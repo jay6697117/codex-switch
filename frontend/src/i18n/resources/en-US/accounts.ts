@@ -39,4 +39,5 @@ export const accounts = {
     "Codex is already running. Confirming the switch will stop the detected sessions, rewrite auth.json, and then restart them.",
   switchConfirmAction: "Restart and switch",
   switchConfirmCancel: "Cancel switch",
+  switch_success: "Active account switched to {{name}}.",
 };

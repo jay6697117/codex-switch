@@ -77,6 +77,73 @@ describe("wails bridge", () => {
     });
   });
 
+  test("preserves success messages for switch envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          SwitchAccount: vi.fn().mockResolvedValue({
+            data: {
+              restartPerformed: false,
+              accounts: {
+                activeAccountId: "acct-2",
+                accounts: [
+                  {
+                    id: "acct-2",
+                    displayName: "Side Project",
+                    authKind: "chatgpt",
+                    createdAt: "2026-03-11T00:00:00Z",
+                    updatedAt: "2026-03-11T00:00:00Z",
+                    warmupAvailability: {
+                      isAvailable: true,
+                    },
+                  },
+                ],
+              },
+            },
+            message: {
+              code: "accounts.switch_success",
+              args: {
+                name: "Side Project",
+              },
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(
+      switchAccountViaWails({
+        accountId: "acct-2",
+        confirmRestart: false,
+      }),
+    ).resolves.toEqual({
+      data: {
+        restartPerformed: false,
+        accounts: {
+          activeAccountId: "acct-2",
+          accounts: [
+            {
+              id: "acct-2",
+              displayName: "Side Project",
+              authKind: "chatgpt",
+              createdAt: "2026-03-11T00:00:00Z",
+              updatedAt: "2026-03-11T00:00:00Z",
+              warmupAvailability: {
+                isAvailable: true,
+              },
+            },
+          ],
+        },
+      },
+      message: {
+        code: "accounts.switch_success",
+        args: {
+          name: "Side Project",
+        },
+      },
+    });
+  });
+
   test("unwraps oauth start envelopes", async () => {
     window.go = {
       main: {
@@ -120,22 +187,36 @@ describe("wails bridge", () => {
                 },
               ],
             },
+            message: {
+              code: "auth.account_added",
+              args: {
+                name: "Work Account",
+              },
+            },
           }),
         },
       },
     };
 
     await expect(completeOAuthLoginViaWails()).resolves.toEqual({
-      activeAccountId: "acct-new",
-      accounts: [
-        {
-          id: "acct-new",
-          displayName: "Work Account",
-          authKind: "chatgpt",
-          createdAt: "2026-03-11T00:00:00Z",
-          updatedAt: "2026-03-11T00:00:00Z",
+      data: {
+        activeAccountId: "acct-new",
+        accounts: [
+          {
+            id: "acct-new",
+            displayName: "Work Account",
+            authKind: "chatgpt",
+            createdAt: "2026-03-11T00:00:00Z",
+            updatedAt: "2026-03-11T00:00:00Z",
+          },
+        ],
+      },
+      message: {
+        code: "auth.account_added",
+        args: {
+          name: "Work Account",
         },
-      ],
+      },
     });
   });
 

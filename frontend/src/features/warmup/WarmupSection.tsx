@@ -8,6 +8,7 @@ import type {
   WarmupScheduleInput,
   WarmupScheduleStatus,
 } from "../../lib/contracts";
+import { formatWarmupNextRun } from "../../lib/i18n/formatting";
 import type { AppServices } from "../../lib/wails/services";
 import type { WarmupShellFeedback } from "./feedback";
 
@@ -42,28 +43,6 @@ function deriveInitialFormState(status?: WarmupScheduleStatus): FormState {
     localTime: status?.schedule?.localTime ?? "09:00",
     accountIds: status?.schedule?.accountIds ?? [],
   };
-}
-
-function formatNextRun(
-  nextRunLocalIso: string | undefined,
-  _locale: string,
-): string {
-  if (!nextRunLocalIso) {
-    return "—";
-  }
-
-  const date = new Date(nextRunLocalIso);
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
-
-  const year = String(date.getFullYear());
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hour = String(date.getHours()).padStart(2, "0");
-  const minute = String(date.getMinutes()).padStart(2, "0");
-
-  return `${year}-${month}-${day} ${hour}:${minute}`;
 }
 
 export function WarmupSection({ accounts, services, feedback }: WarmupSectionProps) {
@@ -115,7 +94,7 @@ export function WarmupSection({ accounts, services, feedback }: WarmupSectionPro
   );
 
   const selectedCount = status?.schedule?.accountIds.length ?? 0;
-  const nextRunLabel = formatNextRun(status?.nextRunLocalIso, i18n.language);
+  const nextRunLabel = formatWarmupNextRun(status?.nextRunLocalIso, i18n.language);
   const showMissedPrompt = Boolean(status?.missedRunToday) && !dialogOpen;
 
   const openDialog = () => {

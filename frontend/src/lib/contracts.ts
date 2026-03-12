@@ -195,3 +195,8 @@ export interface ResultEnvelope<T> {
   message?: AppMessage;
   error?: AppError;
 }
+
+export interface MessageResult<T> {
+  data: T;
+  message?: AppMessage;
+}

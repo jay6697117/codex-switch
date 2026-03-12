@@ -15,4 +15,5 @@ export const auth = {
   cancelLogin: "Cancel login",
   cancellingAction: "Cancelling...",
   addToolbarAction: "Add account",
+  account_added: "Added {{name}} to the local account repository.",
 };

@@ -112,7 +112,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: Complete localized message mapping and full UI copy coverage sweep
+- [x] 06-01: Complete localized message mapping and full UI copy coverage sweep
 - [ ] 06-02: Add parity regression tests across Go services, frontend behaviors, and critical end-to-end flows
 - [ ] 06-03: Harden CI, packaging, and release verification for supported platforms
 
@@ -128,4 +128,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. OAuth and Usage Visibility | 3/3 | Complete | 2026-03-11 |
 | 4. Warmup Automation | 3/3 | Complete | 2026-03-12 |
 | 5. Backup and Preference Management | 3/3 | Complete | 2026-03-12 |
-| 6. Localization Completion and Release Readiness | 0/3 | Not started | - |
+| 6. Localization Completion and Release Readiness | 1/3 | In Progress | - |

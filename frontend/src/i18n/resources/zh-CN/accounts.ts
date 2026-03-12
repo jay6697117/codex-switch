@@ -39,4 +39,5 @@ export const accounts = {
     "当前已有运行中的 Codex。确认后会先停止已检测到的会话，重写 auth.json，然后再尝试恢复它们。",
   switchConfirmAction: "重启并切换",
   switchConfirmCancel: "取消切换",
+  switch_success: "当前活跃账号已切换为 {{name}}。",
 };

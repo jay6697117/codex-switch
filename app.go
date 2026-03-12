@@ -167,7 +167,12 @@ func (a *App) SwitchAccount(input contracts.SwitchAccountInput) contracts.Result
 	if err == nil {
 		result.Accounts = a.decorateAccountsSnapshot(result.Accounts)
 	}
-	return wrapResult(result, err, "switch.active_update_failed")
+	return wrapResultWithMessage(
+		result,
+		successMessage("accounts.switch_success", activeAccountMessageArgs(result.Accounts)),
+		err,
+		"switch.active_update_failed",
+	)
 }
 
 func (a *App) StartOAuthLogin(input contracts.StartOAuthLoginInput) contracts.ResultEnvelope[contracts.OAuthLoginInfo] {
@@ -180,7 +185,12 @@ func (a *App) CompleteOAuthLogin() contracts.ResultEnvelope[contracts.AccountsSn
 	if err == nil {
 		snapshot = a.decorateAccountsSnapshot(snapshot)
 	}
-	return wrapResult(snapshot, err, "oauth.complete_failed")
+	return wrapResultWithMessage(
+		snapshot,
+		successMessage("auth.account_added", activeAccountMessageArgs(snapshot)),
+		err,
+		"oauth.complete_failed",
+	)
 }
 
 func (a *App) CancelOAuthLogin() contracts.ResultEnvelope[contracts.OAuthCancelResult] {
@@ -274,12 +284,13 @@ func (a *App) SelectFullExportPath() contracts.ResultEnvelope[contracts.PathSele
 		)
 	}
 
+	dialogCopy := a.fullBackupDialogCopy(a.requestContext())
 	path, err := wailsruntime.SaveFileDialog(a.ctx, wailsruntime.SaveDialogOptions{
-		Title:           "Export Full Encrypted Backup",
+		Title:           dialogCopy.ExportTitle,
 		DefaultFilename: "codex-switch-full.cswf",
 		Filters: []wailsruntime.FileFilter{
 			{
-				DisplayName: "Codex Switch Full Backup (*.cswf)",
+				DisplayName: dialogCopy.FilterLabel,
 				Pattern:     "*.cswf",
 			},
 		},
@@ -311,11 +322,12 @@ func (a *App) SelectFullImportPath() contracts.ResultEnvelope[contracts.PathSele
 		)
 	}
 
+	dialogCopy := a.fullBackupDialogCopy(a.requestContext())
 	path, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
-		Title: "Import Full Encrypted Backup",
+		Title: dialogCopy.ImportTitle,
 		Filters: []wailsruntime.FileFilter{
 			{
-				DisplayName: "Codex Switch Full Backup (*.cswf)",
+				DisplayName: dialogCopy.FilterLabel,
 				Pattern:     "*.cswf",
 			},
 		},
@@ -373,6 +385,22 @@ func wrapResult[T any](data T, err error, fallbackCode string) contracts.ResultE
 	}
 }
 
+func wrapResultWithMessage[T any](
+	data T,
+	message *contracts.AppMessage,
+	err error,
+	fallbackCode string,
+) contracts.ResultEnvelope[T] {
+	if err != nil {
+		return wrapResult(data, err, fallbackCode)
+	}
+
+	return contracts.ResultEnvelope[T]{
+		Data:    data,
+		Message: message,
+	}
+}
+
 func (a *App) loadWarmupScheduleStatus(
 	ctx context.Context,
 ) (contracts.WarmupScheduleStatus, error) {
@@ -415,6 +443,68 @@ func (a *App) decorateAccountsSnapshot(snapshot contracts.AccountsSnapshot) cont
 	}
 
 	return snapshot
+}
+
+type fullBackupDialogCopy struct {
+	ExportTitle string
+	ImportTitle string
+	FilterLabel string
+}
+
+func (a *App) fullBackupDialogCopy(ctx context.Context) fullBackupDialogCopy {
+	locale := contracts.LocaleEnUS
+	if a.preferencesService != nil {
+		if settingsSnapshot, err := a.preferencesService.Load(ctx); err == nil {
+			locale = settingsSnapshot.EffectiveLocale
+		}
+	}
+
+	if locale == contracts.LocaleZhCN {
+		return fullBackupDialogCopy{
+			ExportTitle: "导出完整加密备份",
+			ImportTitle: "导入完整加密备份",
+			FilterLabel: "Codex Switch 完整备份 (*.cswf)",
+		}
+	}
+
+	return fullBackupDialogCopy{
+		ExportTitle: "Export Full Encrypted Backup",
+		ImportTitle: "Import Full Encrypted Backup",
+		FilterLabel: "Codex Switch Full Backup (*.cswf)",
+	}
+}
+
+func successMessage(code string, args map[string]string) *contracts.AppMessage {
+	if code == "" {
+		return nil
+	}
+
+	return &contracts.AppMessage{
+		Code: code,
+		Args: args,
+	}
+}
+
+func activeAccountMessageArgs(snapshot contracts.AccountsSnapshot) map[string]string {
+	if snapshot.ActiveAccountID == nil {
+		return nil
+	}
+
+	for _, account := range snapshot.Accounts {
+		if account.ID != *snapshot.ActiveAccountID {
+			continue
+		}
+
+		if account.DisplayName == "" {
+			return nil
+		}
+
+		return map[string]string{
+			"name": account.DisplayName,
+		}
+	}
+
+	return nil
 }
 
 func mapWarmupAllResult(input warmup.WarmupAllResult) contracts.WarmupAllResult {

@@ -1,37 +1,44 @@
 import { useTranslation } from "react-i18next";
 
 import type { AccountUsageSnapshot } from "../../lib/contracts";
+import { formatUsageResetTime } from "../../lib/i18n/formatting";
 
 interface UsageSummaryProps {
   usage?: AccountUsageSnapshot;
   loading: boolean;
 }
 
-function formatResetTime(value?: string): string {
-  if (!value) {
-    return "";
+function getPlanTypeLabel(
+  planType: string | undefined,
+  t: (key: string) => string,
+): string | null {
+  if (!planType) {
+    return null;
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
+  switch (planType.trim().toLowerCase()) {
+    case "free":
+      return t("planTypeFree");
+    case "plus":
+      return t("planTypePlus");
+    case "pro":
+      return t("planTypePro");
+    case "team":
+      return t("planTypeTeam");
+    default:
+      return t("planTypeUnknown");
   }
-
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
 }
 
 function UsageWindow({
   label,
+  locale,
   usedPercent,
   windowMinutes,
   resetsAt,
 }: {
   label: string;
+  locale: string;
   usedPercent?: number;
   windowMinutes: number;
   resetsAt?: string;
@@ -48,13 +55,14 @@ function UsageWindow({
       <div className="usage-track" role="presentation">
         <div className="usage-fill" style={{ width: `${width}%` }} />
       </div>
-      {resetsAt ? <p>{t("resetsAt", { value: formatResetTime(resetsAt) })}</p> : null}
+      {resetsAt ? <p>{t("resetsAt", { value: formatUsageResetTime(resetsAt, locale) })}</p> : null}
     </div>
   );
 }
 
 export function UsageSummary({ usage, loading }: UsageSummaryProps) {
-  const { t } = useTranslation(["usage", "errors"]);
+  const { i18n, t } = useTranslation(["usage", "errors"]);
+  const planTypeLabel = getPlanTypeLabel(usage?.planType, t);
 
   if (loading) {
     return (
@@ -97,12 +105,13 @@ export function UsageSummary({ usage, loading }: UsageSummaryProps) {
     <div className="usage-panel">
       <div className="usage-header">
         <strong>{t("usage:title")}</strong>
-        {usage.planType ? <span className="usage-plan-pill">{usage.planType}</span> : null}
+        {planTypeLabel ? <span className="usage-plan-pill">{planTypeLabel}</span> : null}
       </div>
 
       {usage.fiveHour ? (
         <UsageWindow
           label={t("usage:fiveHourLabel")}
+          locale={i18n.language}
           resetsAt={usage.fiveHour.resetsAt}
           usedPercent={usage.fiveHour.usedPercent}
           windowMinutes={usage.fiveHour.windowMinutes}
@@ -112,6 +121,7 @@ export function UsageSummary({ usage, loading }: UsageSummaryProps) {
       {usage.weekly ? (
         <UsageWindow
           label={t("usage:weeklyLabel")}
+          locale={i18n.language}
           resetsAt={usage.weekly.resetsAt}
           usedPercent={usage.weekly.usedPercent}
           windowMinutes={usage.weekly.windowMinutes}

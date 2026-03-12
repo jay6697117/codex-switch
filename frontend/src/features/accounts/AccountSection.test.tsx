@@ -8,6 +8,7 @@ import { createAppI18n } from "../../i18n/createAppI18n";
 import type {
   AccountUsageSnapshot,
   AccountsSnapshot,
+  MessageResult,
   ProcessStatus,
   SwitchAccountResult,
   UsageCollection,
@@ -101,6 +102,9 @@ function createServices(options?: {
         accounts: snapshot.accounts,
       },
     } satisfies SwitchAccountResult);
+  const switchEnvelope: MessageResult<SwitchAccountResult> = {
+    data: switchResult,
+  };
   const usageAllResult =
     options?.usageAllResult ??
     ({
@@ -190,13 +194,16 @@ function createServices(options?: {
         },
       ],
     } satisfies AccountsSnapshot);
+  const oauthCompleteEnvelope: MessageResult<AccountsSnapshot> = {
+    data: oauthCompleteResult,
+  };
 
   return {
     accounts: {
       load: vi.fn().mockResolvedValue(snapshot),
       rename: vi.fn().mockResolvedValue(renameResult),
       remove: vi.fn().mockResolvedValue(removeResult),
-      switch: vi.fn().mockResolvedValue(switchResult),
+      switch: vi.fn().mockResolvedValue(switchEnvelope),
     },
     process: {
       getStatus: vi.fn(async () => {
@@ -208,7 +215,7 @@ function createServices(options?: {
     },
     oauth: {
       start: vi.fn().mockResolvedValue(oauthStartResult),
-      complete: vi.fn().mockResolvedValue(oauthCompleteResult),
+      complete: vi.fn().mockResolvedValue(oauthCompleteEnvelope),
       cancel: vi.fn().mockResolvedValue({ pending: false }),
     },
     usage: {
@@ -488,6 +495,21 @@ describe("AccountSection", () => {
     const services = createServices({
       processStatuses: [idleProcessStatus, idleProcessStatus, idleProcessStatus],
     });
+    services.accounts.switch = vi.fn().mockResolvedValue({
+      data: {
+        restartPerformed: false,
+        accounts: {
+          ...baseSnapshot,
+          activeAccountId: "acc-side",
+        },
+      },
+      message: {
+        code: "accounts.switch_success",
+        args: {
+          name: "Side Project",
+        },
+      },
+    });
     const { user } = await renderAccountSection(services);
 
     await screen.findByText("Side Project");
@@ -500,6 +522,7 @@ describe("AccountSection", () => {
       });
     });
     expect(screen.queryByRole("dialog", { name: "Restart Codex before switching?" })).not.toBeInTheDocument();
+    expect(await screen.findByText("Active account switched to Side Project.")).toBeInTheDocument();
   });
 
   test("applies per-account and global masking without persisting state", async () => {
@@ -546,6 +569,31 @@ describe("AccountSection", () => {
 
   test("completes oauth login and refreshes accounts process and usage", async () => {
     const services = createServices();
+    services.oauth.complete = vi.fn().mockResolvedValue({
+      data: {
+        activeAccountId: "acc-new",
+        accounts: [
+          ...baseSnapshot.accounts,
+          {
+            id: "acc-new",
+            displayName: "New OAuth Account",
+            email: "new@example.com",
+            authKind: "chatgpt",
+            createdAt: "2026-03-11T10:00:00Z",
+            updatedAt: "2026-03-11T10:00:00Z",
+            warmupAvailability: {
+              isAvailable: true,
+            },
+          },
+        ],
+      },
+      message: {
+        code: "auth.account_added",
+        args: {
+          name: "New OAuth Account",
+        },
+      },
+    });
     const { user } = await renderAccountSection(services);
 
     await screen.findByText("Work Account");
@@ -561,6 +609,9 @@ describe("AccountSection", () => {
       expect(services.usage.refreshAll).toHaveBeenCalledTimes(2);
     });
     expect(await screen.findByText("New OAuth Account")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Added New OAuth Account to the local account repository."),
+    ).toBeInTheDocument();
   });
 
   test("refreshes usage for a single account without triggering bulk refresh", async () => {

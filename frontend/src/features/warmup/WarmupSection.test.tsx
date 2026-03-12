@@ -8,6 +8,7 @@ import type {
   WarmupScheduleInput,
   WarmupScheduleStatus,
 } from "../../lib/contracts";
+import { formatWarmupNextRun } from "../../lib/i18n/formatting";
 import type { AppServices } from "../../lib/wails/services";
 import { createAppI18n } from "../../i18n/createAppI18n";
 import { WarmupSection } from "./WarmupSection";
@@ -120,7 +121,9 @@ describe("WarmupSection", () => {
     const summary = await screen.findByLabelText("warmup schedule summary");
     expect(within(summary).getByText("07:45")).toBeInTheDocument();
     expect(within(summary).getByText("2")).toBeInTheDocument();
-    expect(within(summary).getByText("2026-03-12 07:45")).toBeInTheDocument();
+    expect(
+      within(summary).getByText(formatWarmupNextRun("2026-03-12T07:45:00+08:00", "en-US")),
+    ).toBeInTheDocument();
   });
 
   test("shows inline validation and select-all controls inside the schedule dialog", async () => {
@@ -156,7 +159,9 @@ describe("WarmupSection", () => {
     const summary = await screen.findByLabelText("warmup schedule summary");
     expect(within(summary).getByText("08:30")).toBeInTheDocument();
     expect(within(summary).getByText("1")).toBeInTheDocument();
-    expect(within(summary).getByText("2026-03-12 08:30")).toBeInTheDocument();
+    expect(
+      within(summary).getByText(formatWarmupNextRun("2026-03-12T08:30:00+08:00", "en-US")),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Configure daily warm-up" })).not.toBeInTheDocument();
   });
 

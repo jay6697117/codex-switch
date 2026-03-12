@@ -15,4 +15,5 @@ export const auth = {
   cancelLogin: "取消登录",
   cancellingAction: "正在取消...",
   addToolbarAction: "添加账号",
+  account_added: "已将 {{name}} 添加到本地账号仓库。",
 };

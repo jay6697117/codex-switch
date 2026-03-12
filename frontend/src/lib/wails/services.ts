@@ -5,6 +5,7 @@ import type {
   BootstrapPayload,
   ExportFullBackupInput,
   ImportFullBackupInput,
+  MessageResult,
   PathSelectionResult,
   OAuthCancelResult,
   OAuthLoginInfo,
@@ -67,7 +68,7 @@ export interface AccountsService {
   load(): Promise<AccountsSnapshot>;
   rename(input: RenameAccountInput): Promise<AccountsSnapshot>;
   remove(accountId: string): Promise<AccountsSnapshot>;
-  switch(input: SwitchAccountInput): Promise<SwitchAccountResult>;
+  switch(input: SwitchAccountInput): Promise<MessageResult<SwitchAccountResult>>;
 }
 
 export interface ProcessService {
@@ -76,7 +77,7 @@ export interface ProcessService {
 
 export interface OAuthService {
   start(input: StartOAuthLoginInput): Promise<OAuthLoginInfo>;
-  complete(): Promise<AccountsSnapshot>;
+  complete(): Promise<MessageResult<AccountsSnapshot>>;
   cancel(): Promise<OAuthCancelResult>;
 }
 

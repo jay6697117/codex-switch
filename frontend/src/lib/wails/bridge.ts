@@ -2,10 +2,12 @@ import type {
   AccountsSnapshot,
   AccountUsageSnapshot,
   AppError,
+  AppMessage,
   BackupImportSummary,
   ExportFullBackupInput,
   BootstrapPayload,
   ImportFullBackupInput,
+  MessageResult,
   OAuthCancelResult,
   OAuthLoginInfo,
   PathSelectionResult,
@@ -95,6 +97,16 @@ function unwrapEnvelope<T>(envelope: ResultEnvelope<T> | undefined, fallbackCode
   throw { code: fallbackCode } satisfies AppError;
 }
 
+function unwrapEnvelopeWithMessage<T>(
+  envelope: ResultEnvelope<T> | undefined,
+  fallbackCode: string,
+): MessageResult<T> {
+  return {
+    data: unwrapEnvelope(envelope, fallbackCode),
+    message: envelope?.message as AppMessage | undefined,
+  };
+}
+
 export async function loadAccountsViaWails(): Promise<AccountsSnapshot> {
   const loadAccounts = window.go?.main?.App?.LoadAccounts;
 
@@ -141,14 +153,14 @@ export async function deleteAccountViaWails(
 
 export async function switchAccountViaWails(
   input: SwitchAccountInput,
-): Promise<SwitchAccountResult> {
+): Promise<MessageResult<SwitchAccountResult>> {
   const switchAccount = window.go?.main?.App?.SwitchAccount;
 
   if (!switchAccount) {
     throw { code: "switch.active_update_failed" } satisfies AppError;
   }
 
-  return unwrapEnvelope(await switchAccount(input), "switch.active_update_failed");
+  return unwrapEnvelopeWithMessage(await switchAccount(input), "switch.active_update_failed");
 }
 
 export async function startOAuthLoginViaWails(
@@ -163,14 +175,14 @@ export async function startOAuthLoginViaWails(
   return unwrapEnvelope(await startOAuthLogin(input), "oauth.start_failed");
 }
 
-export async function completeOAuthLoginViaWails(): Promise<AccountsSnapshot> {
+export async function completeOAuthLoginViaWails(): Promise<MessageResult<AccountsSnapshot>> {
   const completeOAuthLogin = window.go?.main?.App?.CompleteOAuthLogin;
 
   if (!completeOAuthLogin) {
     throw { code: "oauth.complete_failed" } satisfies AppError;
   }
 
-  return unwrapEnvelope(await completeOAuthLogin(), "oauth.complete_failed");
+  return unwrapEnvelopeWithMessage(await completeOAuthLogin(), "oauth.complete_failed");
 }
 
 export async function cancelOAuthLoginViaWails(): Promise<OAuthCancelResult> {
