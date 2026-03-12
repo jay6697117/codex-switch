@@ -10,13 +10,23 @@ export function DeleteAccount(arg1:string):Promise<contracts.ResultEnvelope_code
 
 export function DismissMissedRunToday():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
 
+export function ExportFullBackup(arg1:contracts.ExportFullBackupInput):Promise<contracts.ResultEnvelope_bool_>;
+
+export function ExportSlimText():Promise<contracts.ResultEnvelope_string_>;
+
 export function GetAccountUsage(arg1:string):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountUsageSnapshot_>;
 
 export function GetProcessStatus():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_ProcessStatus_>;
 
+export function ImportFullBackup(arg1:contracts.ImportFullBackupInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_BackupImportSummary_>;
+
+export function ImportSlimText(arg1:string):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_BackupImportSummary_>;
+
 export function LoadAccounts():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountsSnapshot_>;
 
 export function LoadBootstrap():Promise<contracts.BootstrapPayload>;
+
+export function LoadSettings():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_SettingsSnapshot_>;
 
 export function LoadWarmupScheduleStatus():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
 
@@ -26,7 +36,13 @@ export function RenameAccount(arg1:contracts.RenameAccountInput):Promise<contrac
 
 export function RunMissedWarmupNow():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
 
+export function SaveSettings(arg1:contracts.SaveSettingsInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_SettingsSnapshot_>;
+
 export function SaveWarmupSchedule(arg1:contracts.WarmupScheduleInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
+
+export function SelectFullExportPath():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_PathSelectionResult_>;
+
+export function SelectFullImportPath():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_PathSelectionResult_>;
 
 export function StartOAuthLogin(arg1:contracts.StartOAuthLoginInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_OAuthLoginInfo_>;
 

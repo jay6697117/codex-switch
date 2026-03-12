@@ -2,9 +2,9 @@ package bootstrap
 
 import (
 	"context"
-	"strings"
 
 	"codex-switch/internal/contracts"
+	platformlocale "codex-switch/internal/platform/locale"
 )
 
 type LocaleDetector interface {
@@ -39,7 +39,7 @@ func (s *Service) Load(ctx context.Context) (contracts.BootstrapPayload, error) 
 	}
 
 	if hasOverride {
-		return s.payload(resolveLocale(override), true), nil
+		return s.payload(platformlocale.ResolveSupportedLocale(override), true), nil
 	}
 
 	locale, err := s.detector.DetectLocale(ctx)
@@ -47,7 +47,7 @@ func (s *Service) Load(ctx context.Context) (contracts.BootstrapPayload, error) 
 		locale = string(contracts.LocaleEnUS)
 	}
 
-	return s.payload(resolveLocale(locale), false), nil
+	return s.payload(platformlocale.ResolveSupportedLocale(locale), false), nil
 }
 
 func (s *Service) payload(locale contracts.LocaleCode, hasManualOverride bool) contracts.BootstrapPayload {
@@ -56,23 +56,5 @@ func (s *Service) payload(locale contracts.LocaleCode, hasManualOverride bool) c
 		SupportedLocales:  append([]contracts.LocaleCode(nil), contracts.SupportedLocales...),
 		HasManualOverride: hasManualOverride,
 		App:               s.appInfo,
-	}
-}
-
-func resolveLocale(raw string) contracts.LocaleCode {
-	normalized := strings.TrimSpace(strings.ToLower(raw))
-	normalized = strings.ReplaceAll(normalized, "_", "-")
-
-	if idx := strings.Index(normalized, "."); idx >= 0 {
-		normalized = normalized[:idx]
-	}
-
-	switch {
-	case strings.HasPrefix(normalized, "zh"):
-		return contracts.LocaleZhCN
-	case strings.HasPrefix(normalized, "en"):
-		return contracts.LocaleEnUS
-	default:
-		return contracts.LocaleEnUS
 	}
 }

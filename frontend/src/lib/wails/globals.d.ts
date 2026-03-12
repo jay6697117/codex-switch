@@ -1,12 +1,18 @@
 import type {
   AccountsSnapshot,
   AccountUsageSnapshot,
+  BackupImportSummary,
   BootstrapPayload,
+  ExportFullBackupInput,
+  ImportFullBackupInput,
   OAuthCancelResult,
   OAuthLoginInfo,
+  PathSelectionResult,
   ProcessStatus,
   RenameAccountInput,
   ResultEnvelope,
+  SaveSettingsInput,
+  SettingsSnapshot,
   StartOAuthLoginInput,
   SwitchAccountInput,
   SwitchAccountResult,
@@ -23,6 +29,10 @@ declare global {
       main?: {
         App?: {
           LoadBootstrap?: () => Promise<BootstrapPayload>;
+          LoadSettings?: () => Promise<ResultEnvelope<SettingsSnapshot>>;
+          SaveSettings?: (
+            input: SaveSettingsInput,
+          ) => Promise<ResultEnvelope<SettingsSnapshot>>;
           LoadAccounts?: () => Promise<ResultEnvelope<AccountsSnapshot>>;
           GetAccountUsage?: (
             accountId: string,
@@ -39,6 +49,18 @@ declare global {
           ) => Promise<ResultEnvelope<WarmupScheduleStatus>>;
           DismissMissedRunToday?: () => Promise<ResultEnvelope<WarmupScheduleStatus>>;
           RunMissedWarmupNow?: () => Promise<ResultEnvelope<WarmupScheduleStatus>>;
+          ExportSlimText?: () => Promise<ResultEnvelope<string>>;
+          ImportSlimText?: (
+            payload: string,
+          ) => Promise<ResultEnvelope<BackupImportSummary>>;
+          SelectFullExportPath?: () => Promise<ResultEnvelope<PathSelectionResult>>;
+          ExportFullBackup?: (
+            input: ExportFullBackupInput,
+          ) => Promise<ResultEnvelope<boolean>>;
+          SelectFullImportPath?: () => Promise<ResultEnvelope<PathSelectionResult>>;
+          ImportFullBackup?: (
+            input: ImportFullBackupInput,
+          ) => Promise<ResultEnvelope<BackupImportSummary>>;
           RenameAccount?: (
             input: RenameAccountInput,
           ) => Promise<ResultEnvelope<AccountsSnapshot>>;

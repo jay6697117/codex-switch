@@ -11,6 +11,7 @@ import type {
 import type { AppServices } from "../lib/wails/services";
 import { applyBootstrapLocale } from "../i18n/createAppI18n";
 import { AccountSection } from "../features/accounts/AccountSection";
+import { SettingsSection } from "../features/settings/SettingsSection";
 import { WarmupSection } from "../features/warmup/WarmupSection";
 import {
   createRuntimeWarmupFeedback,
@@ -34,6 +35,7 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [warmupFeedback, setWarmupFeedback] = useState<WarmupShellFeedback | null>(null);
+  const [shellRevision, setShellRevision] = useState(0);
   const { t } = useTranslation(["errors", "shell", "warmup"]);
 
   useEffect(() => {
@@ -107,9 +109,28 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
           setAccounts(snapshot.accounts);
         }}
         onWarmupFeedback={setWarmupFeedback}
+        revision={shellRevision}
         services={services}
       />
       <WarmupSection accounts={accounts} feedback={warmupFeedback} services={services} />
+      <SettingsSection
+        onBackupImported={() => {
+          setShellRevision((current) => current + 1);
+        }}
+        onSettingsSaved={(settingsSnapshot) => {
+          void i18n.changeLanguage(settingsSnapshot.effectiveLocale);
+          setBootstrap((current) =>
+            current
+              ? {
+                  ...current,
+                  locale: settingsSnapshot.effectiveLocale,
+                  hasManualOverride: settingsSnapshot.localePreference !== "system",
+                }
+              : current,
+          );
+        }}
+        services={services}
+      />
       <CapabilityGrid />
     </main>
   );

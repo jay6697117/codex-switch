@@ -59,7 +59,7 @@ func (s *Service) SwitchAccount(
 		return contracts.SwitchAccountResult{}, contracts.AppError{Code: "switch.account_not_found"}
 	}
 
-	targetAuth, err := buildAuthFile(targetAccount, s.now())
+	targetAuth, err := BuildAuthFile(targetAccount, s.now())
 	if err != nil {
 		return contracts.SwitchAccountResult{}, err
 	}
@@ -158,7 +158,7 @@ func (s *Service) rollback(
 	return nil
 }
 
-func buildAuthFile(account accounts.AccountRecord, now time.Time) (*AuthFile, error) {
+func BuildAuthFile(account accounts.AccountRecord, now time.Time) (*AuthFile, error) {
 	switch account.Auth.Kind {
 	case "apiKey":
 		if account.Auth.APIKey == nil || account.Auth.APIKey.APIKey == "" {

@@ -18,8 +18,9 @@ type Store struct {
 }
 
 type preferences struct {
-	Locale         string                    `json:"locale,omitempty"`
-	WarmupSchedule *contracts.WarmupSchedule `json:"warmupSchedule,omitempty"`
+	Locale             string                    `json:"locale,omitempty"`
+	BackupSecurityMode string                    `json:"backupSecurityMode,omitempty"`
+	WarmupSchedule     *contracts.WarmupSchedule `json:"warmupSchedule,omitempty"`
 }
 
 func NewStore(path string) Store {

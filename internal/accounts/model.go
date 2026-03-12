@@ -18,6 +18,7 @@ type AccountRecord struct {
 	ID          string      `json:"id"`
 	DisplayName string      `json:"displayName"`
 	Email       string      `json:"email,omitempty"`
+	PlanType    *string     `json:"planType,omitempty"`
 	Auth        AccountAuth `json:"auth"`
 	CreatedAt   time.Time   `json:"createdAt"`
 	UpdatedAt   time.Time   `json:"updatedAt"`
@@ -88,6 +89,7 @@ func SnapshotFromStore(store AccountsStore) contracts.AccountsSnapshot {
 
 func cloneAccountRecord(account AccountRecord) AccountRecord {
 	cloned := account
+	cloned.PlanType = copyStringPointer(account.PlanType)
 	cloned.LastUsedAt = copyTimePointer(account.LastUsedAt)
 
 	if account.Auth.ChatGPT != nil {

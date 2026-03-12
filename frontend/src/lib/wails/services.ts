@@ -1,11 +1,17 @@
 import type {
   AccountsSnapshot,
   AccountUsageSnapshot,
+  BackupImportSummary,
   BootstrapPayload,
+  ExportFullBackupInput,
+  ImportFullBackupInput,
+  PathSelectionResult,
   OAuthCancelResult,
   OAuthLoginInfo,
   ProcessStatus,
   RenameAccountInput,
+  SaveSettingsInput,
+  SettingsSnapshot,
   StartOAuthLoginInput,
   SwitchAccountInput,
   SwitchAccountResult,
@@ -20,7 +26,12 @@ import {
   completeOAuthLoginViaWails,
   deleteAccountViaWails,
   dismissMissedRunTodayViaWails,
+  exportFullBackupViaWails,
+  exportSlimTextViaWails,
   getAccountUsageViaWails,
+  importFullBackupViaWails,
+  importSlimTextViaWails,
+  loadSettingsViaWails,
   loadWarmupScheduleStatusViaWails,
   loadAccountsViaWails,
   loadBootstrapViaWails,
@@ -28,6 +39,9 @@ import {
   refreshAllUsageViaWails,
   renameAccountViaWails,
   saveWarmupScheduleViaWails,
+  saveSettingsViaWails,
+  selectFullExportPathViaWails,
+  selectFullImportPathViaWails,
   startOAuthLoginViaWails,
   subscribeToRuntimeEvent,
   switchAccountViaWails,
@@ -38,6 +52,11 @@ import {
 
 export interface BootstrapService {
   load(): Promise<BootstrapPayload>;
+}
+
+export interface SettingsService {
+  load(): Promise<SettingsSnapshot>;
+  save(input: SaveSettingsInput): Promise<SettingsSnapshot>;
 }
 
 export interface RuntimeEventsService {
@@ -75,13 +94,24 @@ export interface WarmupService {
   runMissedWarmupNow(): Promise<WarmupScheduleStatus>;
 }
 
+export interface BackupService {
+  exportSlimText(): Promise<string>;
+  importSlimText(payload: string): Promise<BackupImportSummary>;
+  selectFullExportPath(): Promise<PathSelectionResult>;
+  exportFull(input: ExportFullBackupInput): Promise<boolean>;
+  selectFullImportPath(): Promise<PathSelectionResult>;
+  importFull(input: ImportFullBackupInput): Promise<BackupImportSummary>;
+}
+
 export interface AppServices {
   bootstrap: BootstrapService;
+  settings: SettingsService;
   accounts: AccountsService;
   process: ProcessService;
   oauth: OAuthService;
   usage: UsageService;
   warmup: WarmupService;
+  backup: BackupService;
   events?: RuntimeEventsService;
 }
 
@@ -89,6 +119,10 @@ export function createAppServices(): AppServices {
   return {
     bootstrap: {
       load: loadBootstrapViaWails,
+    },
+    settings: {
+      load: loadSettingsViaWails,
+      save: saveSettingsViaWails,
     },
     accounts: {
       load: loadAccountsViaWails,
@@ -115,6 +149,14 @@ export function createAppServices(): AppServices {
       saveSchedule: saveWarmupScheduleViaWails,
       dismissMissedRunToday: dismissMissedRunTodayViaWails,
       runMissedWarmupNow: runMissedWarmupNowViaWails,
+    },
+    backup: {
+      exportSlimText: exportSlimTextViaWails,
+      importSlimText: importSlimTextViaWails,
+      selectFullExportPath: selectFullExportPathViaWails,
+      exportFull: exportFullBackupViaWails,
+      selectFullImportPath: selectFullImportPathViaWails,
+      importFull: importFullBackupViaWails,
     },
     events: {
       subscribe: subscribeToRuntimeEvent,

@@ -190,6 +190,22 @@ export namespace contracts {
 	        this.args = source["args"];
 	    }
 	}
+	export class BackupImportSummary {
+	    totalInPayload: number;
+	    importedCount: number;
+	    skippedCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new BackupImportSummary(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.totalInPayload = source["totalInPayload"];
+	        this.importedCount = source["importedCount"];
+	        this.skippedCount = source["skippedCount"];
+	    }
+	}
 	export class BootstrapPayload {
 	    locale: string;
 	    supportedLocales: string[];
@@ -226,6 +242,34 @@ export namespace contracts {
 		    return a;
 		}
 	}
+	export class ExportFullBackupInput {
+	    path: string;
+	    passphrase?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ExportFullBackupInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.passphrase = source["passphrase"];
+	    }
+	}
+	export class ImportFullBackupInput {
+	    path: string;
+	    passphrase?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ImportFullBackupInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.passphrase = source["passphrase"];
+	    }
+	}
 	export class OAuthCancelResult {
 	    pending: boolean;
 	
@@ -252,6 +296,20 @@ export namespace contracts {
 	        this.authUrl = source["authUrl"];
 	        this.callbackPort = source["callbackPort"];
 	        this.pending = source["pending"];
+	    }
+	}
+	export class PathSelectionResult {
+	    selected: boolean;
+	    path?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PathSelectionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.selected = source["selected"];
+	        this.path = source["path"];
 	    }
 	}
 	export class ProcessStatus {
@@ -283,6 +341,40 @@ export namespace contracts {
 	        this.id = source["id"];
 	        this.displayName = source["displayName"];
 	    }
+	}
+	export class ResultEnvelope_bool_ {
+	    data?: boolean;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_bool_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = source["data"];
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class ResultEnvelope_codex_switch_internal_contracts_AccountUsageSnapshot_ {
 	    data?: AccountUsageSnapshot;
@@ -330,6 +422,40 @@ export namespace contracts {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.data = this.convertValues(source["data"], AccountsSnapshot);
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ResultEnvelope_codex_switch_internal_contracts_BackupImportSummary_ {
+	    data?: BackupImportSummary;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_codex_switch_internal_contracts_BackupImportSummary_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = this.convertValues(source["data"], BackupImportSummary);
 	        this.message = this.convertValues(source["message"], AppMessage);
 	        this.error = this.convertValues(source["error"], AppError);
 	    }
@@ -420,6 +546,40 @@ export namespace contracts {
 		    return a;
 		}
 	}
+	export class ResultEnvelope_codex_switch_internal_contracts_PathSelectionResult_ {
+	    data?: PathSelectionResult;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_codex_switch_internal_contracts_PathSelectionResult_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = this.convertValues(source["data"], PathSelectionResult);
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ResultEnvelope_codex_switch_internal_contracts_ProcessStatus_ {
 	    data?: ProcessStatus;
 	    message?: AppMessage;
@@ -432,6 +592,56 @@ export namespace contracts {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.data = this.convertValues(source["data"], ProcessStatus);
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SettingsSnapshot {
+	    localePreference: string;
+	    effectiveLocale: string;
+	    backupSecurityMode: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SettingsSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.localePreference = source["localePreference"];
+	        this.effectiveLocale = source["effectiveLocale"];
+	        this.backupSecurityMode = source["backupSecurityMode"];
+	    }
+	}
+	export class ResultEnvelope_codex_switch_internal_contracts_SettingsSnapshot_ {
+	    data?: SettingsSnapshot;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_codex_switch_internal_contracts_SettingsSnapshot_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = this.convertValues(source["data"], SettingsSnapshot);
 	        this.message = this.convertValues(source["message"], AppMessage);
 	        this.error = this.convertValues(source["error"], AppError);
 	    }
@@ -832,6 +1042,55 @@ export namespace contracts {
 		    return a;
 		}
 	}
+	export class ResultEnvelope_string_ {
+	    data?: string;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_string_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = source["data"];
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SaveSettingsInput {
+	    localePreference: string;
+	    backupSecurityMode: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SaveSettingsInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.localePreference = source["localePreference"];
+	        this.backupSecurityMode = source["backupSecurityMode"];
+	    }
+	}
+	
 	export class StartOAuthLoginInput {
 	    accountName: string;
 	

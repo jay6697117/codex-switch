@@ -30,6 +30,7 @@ interface AccountSectionProps {
   services: Pick<AppServices, "accounts" | "oauth" | "process" | "usage" | "warmup">;
   onSnapshotChange?: (snapshot: AccountsSnapshot) => void;
   onWarmupFeedback?: (feedback: WarmupShellFeedback) => void;
+  revision?: number;
 }
 
 interface WarmupFeedback {
@@ -475,6 +476,7 @@ export function AccountSection({
   services,
   onSnapshotChange,
   onWarmupFeedback,
+  revision = 0,
 }: AccountSectionProps) {
   const { t } = useTranslation(["accounts", "auth", "errors", "usage", "warmup"]);
   const [snapshot, setSnapshot] = useState<AccountsSnapshot | null>(null);
@@ -649,7 +651,7 @@ export function AccountSection({
         clearTimeout(deleteTimeoutRef.current);
       }
     };
-  }, [services]);
+  }, [revision, services]);
 
   const view = useMemo(
     () => (snapshot ? deriveAccountsView(snapshot, maskedAccountIds, allMasked) : null),

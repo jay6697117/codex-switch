@@ -4,13 +4,21 @@ import {
   cancelOAuthLoginViaWails,
   completeOAuthLoginViaWails,
   dismissMissedRunTodayViaWails,
+  exportFullBackupViaWails,
+  exportSlimTextViaWails,
   getAccountUsageViaWails,
+  importFullBackupViaWails,
+  importSlimTextViaWails,
+  loadSettingsViaWails,
   loadWarmupScheduleStatusViaWails,
   loadAccountsViaWails,
   loadProcessStatusViaWails,
   refreshAllUsageViaWails,
   runMissedWarmupNowViaWails,
   saveWarmupScheduleViaWails,
+  saveSettingsViaWails,
+  selectFullExportPathViaWails,
+  selectFullImportPathViaWails,
   startOAuthLoginViaWails,
   switchAccountViaWails,
   warmupAccountViaWails,
@@ -284,6 +292,121 @@ describe("wails bridge", () => {
           refreshedAt: "2026-03-11T20:00:00Z",
         },
       ],
+    });
+  });
+
+  test("unwraps settings envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          LoadSettings: vi.fn().mockResolvedValue({
+            data: {
+              localePreference: "system",
+              effectiveLocale: "en-US",
+              backupSecurityMode: "keychain",
+            },
+          }),
+          SaveSettings: vi.fn().mockResolvedValue({
+            data: {
+              localePreference: "zh-CN",
+              effectiveLocale: "zh-CN",
+              backupSecurityMode: "passphrase",
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(loadSettingsViaWails()).resolves.toEqual({
+      localePreference: "system",
+      effectiveLocale: "en-US",
+      backupSecurityMode: "keychain",
+    });
+
+    await expect(
+      saveSettingsViaWails({
+        localePreference: "zh-CN",
+        backupSecurityMode: "passphrase",
+      }),
+    ).resolves.toEqual({
+      localePreference: "zh-CN",
+      effectiveLocale: "zh-CN",
+      backupSecurityMode: "passphrase",
+    });
+  });
+
+  test("unwraps backup path selection and export flows", async () => {
+    window.go = {
+      main: {
+        App: {
+          ExportSlimText: vi.fn().mockResolvedValue({
+            data: "css1.payload",
+          }),
+          SelectFullExportPath: vi.fn().mockResolvedValue({
+            data: {
+              selected: true,
+              path: "/tmp/export.cswf",
+            },
+          }),
+          ExportFullBackup: vi.fn().mockResolvedValue({
+            data: true,
+          }),
+        },
+      },
+    };
+
+    await expect(exportSlimTextViaWails()).resolves.toBe("css1.payload");
+    await expect(selectFullExportPathViaWails()).resolves.toEqual({
+      selected: true,
+      path: "/tmp/export.cswf",
+    });
+    await expect(
+      exportFullBackupViaWails({
+        path: "/tmp/export.cswf",
+        passphrase: "secret",
+      }),
+    ).resolves.toBe(true);
+  });
+
+  test("passes structured backup import errors through unchanged", async () => {
+    window.go = {
+      main: {
+        App: {
+          SelectFullImportPath: vi.fn().mockResolvedValue({
+            data: {
+              selected: true,
+              path: "/tmp/import.cswf",
+            },
+          }),
+          ImportFullBackup: vi.fn().mockResolvedValue({
+            error: {
+              code: "backup.passphrase_required",
+            },
+          }),
+          ImportSlimText: vi.fn().mockResolvedValue({
+            error: {
+              code: "backup.keychain_unavailable",
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(selectFullImportPathViaWails()).resolves.toEqual({
+      selected: true,
+      path: "/tmp/import.cswf",
+    });
+
+    await expect(
+      importFullBackupViaWails({
+        path: "/tmp/import.cswf",
+      }),
+    ).rejects.toEqual({
+      code: "backup.passphrase_required",
+    });
+
+    await expect(importSlimTextViaWails("css1.payload")).rejects.toEqual({
+      code: "backup.keychain_unavailable",
     });
   });
 

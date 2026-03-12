@@ -2,12 +2,18 @@ import type {
   AccountsSnapshot,
   AccountUsageSnapshot,
   AppError,
+  BackupImportSummary,
+  ExportFullBackupInput,
   BootstrapPayload,
+  ImportFullBackupInput,
   OAuthCancelResult,
   OAuthLoginInfo,
+  PathSelectionResult,
   ProcessStatus,
   RenameAccountInput,
   ResultEnvelope,
+  SaveSettingsInput,
+  SettingsSnapshot,
   StartOAuthLoginInput,
   SwitchAccountInput,
   SwitchAccountResult,
@@ -28,6 +34,12 @@ const fallbackBootstrapPayload: BootstrapPayload = {
   },
 };
 
+const fallbackSettingsSnapshot: SettingsSnapshot = {
+  localePreference: "system",
+  effectiveLocale: "en-US",
+  backupSecurityMode: "keychain",
+};
+
 export async function loadBootstrapViaWails(): Promise<BootstrapPayload> {
   const loadBootstrap = window.go?.main?.App?.LoadBootstrap;
 
@@ -36,6 +48,28 @@ export async function loadBootstrapViaWails(): Promise<BootstrapPayload> {
   }
 
   return loadBootstrap();
+}
+
+export async function loadSettingsViaWails(): Promise<SettingsSnapshot> {
+  const loadSettings = window.go?.main?.App?.LoadSettings;
+
+  if (!loadSettings) {
+    return fallbackSettingsSnapshot;
+  }
+
+  return unwrapEnvelope(await loadSettings(), "settings.save_failed");
+}
+
+export async function saveSettingsViaWails(
+  input: SaveSettingsInput,
+): Promise<SettingsSnapshot> {
+  const saveSettings = window.go?.main?.App?.SaveSettings;
+
+  if (!saveSettings) {
+    throw { code: "settings.save_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await saveSettings(input), "settings.save_failed");
 }
 
 const fallbackAccountsSnapshot: AccountsSnapshot = {
@@ -233,6 +267,72 @@ export async function runMissedWarmupNowViaWails(): Promise<WarmupScheduleStatus
   }
 
   return unwrapEnvelope(await runMissedWarmupNow(), "warmup.execute_failed");
+}
+
+export async function exportSlimTextViaWails(): Promise<string> {
+  const exportSlimText = window.go?.main?.App?.ExportSlimText;
+
+  if (!exportSlimText) {
+    throw { code: "backup.export_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await exportSlimText(), "backup.export_failed");
+}
+
+export async function importSlimTextViaWails(
+  payload: string,
+): Promise<BackupImportSummary> {
+  const importSlimText = window.go?.main?.App?.ImportSlimText;
+
+  if (!importSlimText) {
+    throw { code: "backup.import_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await importSlimText(payload), "backup.import_failed");
+}
+
+export async function selectFullExportPathViaWails(): Promise<PathSelectionResult> {
+  const selectFullExportPath = window.go?.main?.App?.SelectFullExportPath;
+
+  if (!selectFullExportPath) {
+    throw { code: "backup.export_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await selectFullExportPath(), "backup.export_failed");
+}
+
+export async function exportFullBackupViaWails(
+  input: ExportFullBackupInput,
+): Promise<boolean> {
+  const exportFullBackup = window.go?.main?.App?.ExportFullBackup;
+
+  if (!exportFullBackup) {
+    throw { code: "backup.export_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await exportFullBackup(input), "backup.export_failed");
+}
+
+export async function selectFullImportPathViaWails(): Promise<PathSelectionResult> {
+  const selectFullImportPath = window.go?.main?.App?.SelectFullImportPath;
+
+  if (!selectFullImportPath) {
+    throw { code: "backup.import_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await selectFullImportPath(), "backup.import_failed");
+}
+
+export async function importFullBackupViaWails(
+  input: ImportFullBackupInput,
+): Promise<BackupImportSummary> {
+  const importFullBackup = window.go?.main?.App?.ImportFullBackup;
+
+  if (!importFullBackup) {
+    throw { code: "backup.import_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await importFullBackup(input), "backup.import_failed");
 }
 
 export function subscribeToRuntimeEvent<T>(

@@ -14,7 +14,7 @@
 - [x] **Phase 2: Accounts and Safe Switching** - 落地本地账号仓库、进程检测和安全切换事务
 - [x] **Phase 3: OAuth and Usage Visibility** - 完成 OAuth 添加账号、token refresh 与 usage 可视化
 - [x] **Phase 4: Warmup Automation** - 迁移单账号/全量 warm-up、定时调度和错过补跑
-- [ ] **Phase 5: Backup and Preference Management** - 完成 slim/full 备份、安全模式、语言偏好与设置能力
+- [x] **Phase 5: Backup and Preference Management** - 完成 slim/full 备份、安全模式、语言偏好与设置能力
 - [ ] **Phase 6: Localization Completion and Release Readiness** - 完整补齐双语覆盖、回归测试、打包与发布质量
 
 ## Phase Details
@@ -96,9 +96,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: Implement slim/full backup domain logic and compatibility decision boundaries
-- [ ] 05-02: Implement security mode persistence, keychain integration, and full-backup UX flows
-- [ ] 05-03: Implement settings page, locale override persistence, and settings state synchronization
+- [x] 05-01: Implement slim/full backup domain logic and compatibility decision boundaries
+- [x] 05-02: Implement security mode persistence, keychain integration, and full-backup UX flows
+- [x] 05-03: Implement settings page, locale override persistence, and settings state synchronization
 
 ### Phase 6: Localization Completion and Release Readiness
 **Goal**: 完整补齐双语覆盖、localized backend messaging、功能对齐回归、CI/release hardening。  
@@ -127,5 +127,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Accounts and Safe Switching | 3/3 | Complete | 2026-03-11 |
 | 3. OAuth and Usage Visibility | 3/3 | Complete | 2026-03-11 |
 | 4. Warmup Automation | 3/3 | Complete | 2026-03-12 |
-| 5. Backup and Preference Management | 0/3 | Not started | - |
+| 5. Backup and Preference Management | 3/3 | Complete | 2026-03-12 |
 | 6. Localization Completion and Release Readiness | 0/3 | Not started | - |

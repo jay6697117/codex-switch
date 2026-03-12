@@ -7,8 +7,10 @@ import (
 
 	"codex-switch/internal/accounts"
 	"codex-switch/internal/auth"
+	"codex-switch/internal/backup"
 	"codex-switch/internal/bootstrap"
 	"codex-switch/internal/contracts"
+	platformkeychain "codex-switch/internal/platform/keychain"
 	platformlocale "codex-switch/internal/platform/locale"
 	platformprocess "codex-switch/internal/platform/process"
 	"codex-switch/internal/scheduler"
@@ -21,21 +23,26 @@ import (
 )
 
 type App struct {
-	ctx              context.Context
-	bootstrapService *bootstrap.Service
-	accountService   *accounts.Service
-	authService      *auth.Service
-	tokenService     *auth.TokenService
-	switchService    *switching.Service
-	usageService     *usage.Service
-	warmupService    *warmup.Service
-	scheduleService  *settings.WarmupScheduleService
-	schedulerRuntime *scheduler.Runtime
+	ctx                context.Context
+	bootstrapService   *bootstrap.Service
+	preferencesService *settings.PreferencesService
+	accountService     *accounts.Service
+	backupService      *backup.Service
+	authService        *auth.Service
+	tokenService       *auth.TokenService
+	switchService      *switching.Service
+	usageService       *usage.Service
+	warmupService      *warmup.Service
+	scheduleService    *settings.WarmupScheduleService
+	schedulerRuntime   *scheduler.Runtime
 }
 
 func NewApp() *App {
 	repository := accounts.DefaultFileRepository()
 	authStore := switching.DefaultFileAuthStore()
+	preferencesStore := settings.DefaultStore()
+	localeDetector := platformlocale.NewDetector()
+	preferencesService := settings.NewPreferencesService(preferencesStore, localeDetector)
 	tokenService := auth.NewTokenService(
 		repository,
 		authStore,
@@ -47,7 +54,7 @@ func NewApp() *App {
 		warmup.DefaultHTTPProvider(),
 	)
 	scheduleService := settings.NewWarmupScheduleService(
-		settings.DefaultStore(),
+		preferencesStore,
 		repository,
 	)
 	schedulerRuntime := scheduler.NewRuntime(
@@ -65,10 +72,18 @@ func NewApp() *App {
 
 	return &App{
 		bootstrapService: bootstrap.NewService(
-			settings.DefaultStore(),
-			platformlocale.NewDetector(),
+			preferencesStore,
+			localeDetector,
 		),
-		accountService: accounts.NewService(repository),
+		preferencesService: preferencesService,
+		accountService:     accounts.NewService(repository),
+		backupService: backup.NewService(
+			repository,
+			authStore,
+			preferencesService,
+			platformkeychain.NewDefaultStore(),
+			auth.DefaultHTTPRefreshExchanger(),
+		),
 		authService: auth.NewService(
 			repository,
 			authStore,
@@ -104,6 +119,18 @@ func (a *App) LoadBootstrap() (contracts.BootstrapPayload, error) {
 	}
 
 	return a.bootstrapService.Load(a.ctx)
+}
+
+func (a *App) LoadSettings() contracts.ResultEnvelope[contracts.SettingsSnapshot] {
+	settingsSnapshot, err := a.preferencesService.Load(a.requestContext())
+	return wrapResult(settingsSnapshot, err, "settings.save_failed")
+}
+
+func (a *App) SaveSettings(
+	input contracts.SaveSettingsInput,
+) contracts.ResultEnvelope[contracts.SettingsSnapshot] {
+	settingsSnapshot, err := a.preferencesService.Save(a.requestContext(), input)
+	return wrapResult(settingsSnapshot, err, "settings.save_failed")
 }
 
 func (a *App) LoadAccounts() contracts.ResultEnvelope[contracts.AccountsSnapshot] {
@@ -226,6 +253,101 @@ func (a *App) RunMissedWarmupNow() contracts.ResultEnvelope[contracts.WarmupSche
 
 	status, err := a.loadWarmupScheduleStatus(a.requestContext())
 	return wrapResult(status, err, "warmup.execute_failed")
+}
+
+func (a *App) ExportSlimText() contracts.ResultEnvelope[string] {
+	payload, err := a.backupService.ExportSlimText(a.requestContext())
+	return wrapResult(payload, err, "backup.export_failed")
+}
+
+func (a *App) ImportSlimText(payload string) contracts.ResultEnvelope[contracts.BackupImportSummary] {
+	summary, err := a.backupService.ImportSlimText(a.requestContext(), payload)
+	return wrapResult(summary, err, "backup.import_failed")
+}
+
+func (a *App) SelectFullExportPath() contracts.ResultEnvelope[contracts.PathSelectionResult] {
+	if a.ctx == nil {
+		return wrapResult(
+			contracts.PathSelectionResult{},
+			contracts.AppError{Code: "backup.export_failed"},
+			"backup.export_failed",
+		)
+	}
+
+	path, err := wailsruntime.SaveFileDialog(a.ctx, wailsruntime.SaveDialogOptions{
+		Title:           "Export Full Encrypted Backup",
+		DefaultFilename: "codex-switch-full.cswf",
+		Filters: []wailsruntime.FileFilter{
+			{
+				DisplayName: "Codex Switch Full Backup (*.cswf)",
+				Pattern:     "*.cswf",
+			},
+		},
+	})
+	if err != nil {
+		return wrapResult(
+			contracts.PathSelectionResult{},
+			contracts.AppError{Code: "backup.export_failed"},
+			"backup.export_failed",
+		)
+	}
+	if path == "" {
+		return wrapResult(contracts.PathSelectionResult{Selected: false}, nil, "backup.export_failed")
+	}
+
+	return wrapResult(
+		contracts.PathSelectionResult{Selected: true, Path: stringPointer(path)},
+		nil,
+		"backup.export_failed",
+	)
+}
+
+func (a *App) SelectFullImportPath() contracts.ResultEnvelope[contracts.PathSelectionResult] {
+	if a.ctx == nil {
+		return wrapResult(
+			contracts.PathSelectionResult{},
+			contracts.AppError{Code: "backup.import_failed"},
+			"backup.import_failed",
+		)
+	}
+
+	path, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
+		Title: "Import Full Encrypted Backup",
+		Filters: []wailsruntime.FileFilter{
+			{
+				DisplayName: "Codex Switch Full Backup (*.cswf)",
+				Pattern:     "*.cswf",
+			},
+		},
+	})
+	if err != nil {
+		return wrapResult(
+			contracts.PathSelectionResult{},
+			contracts.AppError{Code: "backup.import_failed"},
+			"backup.import_failed",
+		)
+	}
+	if path == "" {
+		return wrapResult(contracts.PathSelectionResult{Selected: false}, nil, "backup.import_failed")
+	}
+
+	return wrapResult(
+		contracts.PathSelectionResult{Selected: true, Path: stringPointer(path)},
+		nil,
+		"backup.import_failed",
+	)
+}
+
+func (a *App) ExportFullBackup(input contracts.ExportFullBackupInput) contracts.ResultEnvelope[bool] {
+	err := a.backupService.ExportFull(a.requestContext(), input)
+	return wrapResult(true, err, "backup.export_failed")
+}
+
+func (a *App) ImportFullBackup(
+	input contracts.ImportFullBackupInput,
+) contracts.ResultEnvelope[contracts.BackupImportSummary] {
+	summary, err := a.backupService.ImportFull(a.requestContext(), input)
+	return wrapResult(summary, err, "backup.import_failed")
 }
 
 func (a *App) requestContext() context.Context {

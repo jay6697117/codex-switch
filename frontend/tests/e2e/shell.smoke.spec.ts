@@ -33,8 +33,14 @@ test.beforeEach(async ({ page }) => {
     let processStatusCalls = 0;
     const switchCalls: Array<{ accountId: string; confirmRestart: boolean }> = [];
     const browserOpens: string[] = [];
+    const fullImportCalls: Array<{ path: string; passphrase?: string }> = [];
     const usageRefreshes: string[] = [];
     const eventHandlers = new Map<string, Array<(payload: unknown) => void>>();
+    let settingsSnapshot = {
+      localePreference: "system",
+      effectiveLocale: "zh-CN",
+      backupSecurityMode: "keychain",
+    };
     let warmupScheduleStatus = {
       schedule: {
         enabled: true,
@@ -77,6 +83,7 @@ test.beforeEach(async ({ page }) => {
 
     Object.assign(window, {
       __switchCalls: switchCalls,
+      __fullImportCalls: fullImportCalls,
       __browserOpens: browserOpens,
       __usageRefreshes: usageRefreshes,
       __emitWarmupEvent: (payload: unknown) => emitRuntimeEvent("warmup:scheduledResult", payload),
@@ -109,6 +116,24 @@ test.beforeEach(async ({ page }) => {
                 version: "0.1.0",
               },
             }),
+            LoadSettings: async () => ({
+              data: settingsSnapshot,
+            }),
+            SaveSettings: async (input: {
+              localePreference: "system" | "zh-CN" | "en-US";
+              backupSecurityMode: "keychain" | "passphrase";
+            }) => {
+              settingsSnapshot = {
+                localePreference: input.localePreference,
+                effectiveLocale:
+                  input.localePreference === "system" ? "zh-CN" : input.localePreference,
+                backupSecurityMode: input.backupSecurityMode,
+              };
+
+              return {
+                data: settingsSnapshot,
+              };
+            },
             LoadAccounts: async () => ({
               data: {
                 activeAccountId: "acc-active",
@@ -219,6 +244,78 @@ test.beforeEach(async ({ page }) => {
                 items: usageItems,
               },
             }),
+            ExportSlimText: async () => ({
+              data: "css1.payload",
+            }),
+            ImportSlimText: async (payload: string) => {
+              if (payload.trim()) {
+                accounts.push({
+                  id: "acc-imported",
+                  displayName: "Imported Account",
+                  email: "imported@example.com",
+                  authKind: "chatgpt",
+                  createdAt: "2026-03-12T10:30:00Z",
+                  updatedAt: "2026-03-12T10:30:00Z",
+                  warmupAvailability: {
+                    isAvailable: true,
+                  },
+                });
+              }
+
+              return {
+                data: {
+                  totalInPayload: 1,
+                  importedCount: 1,
+                  skippedCount: 0,
+                },
+              };
+            },
+            SelectFullExportPath: async () => ({
+              data: {
+                selected: true,
+                path: "/tmp/export.cswf",
+              },
+            }),
+            ExportFullBackup: async () => ({
+              data: true,
+            }),
+            SelectFullImportPath: async () => ({
+              data: {
+                selected: true,
+                path: "/tmp/import.cswf",
+              },
+            }),
+            ImportFullBackup: async (input: { path: string; passphrase?: string }) => {
+              fullImportCalls.push(input);
+
+              if (!input.passphrase) {
+                return {
+                  error: {
+                    code: "backup.passphrase_required",
+                  },
+                };
+              }
+
+              accounts.push({
+                id: "acc-full",
+                displayName: "Full Backup Account",
+                email: "full@example.com",
+                authKind: "chatgpt",
+                createdAt: "2026-03-12T11:00:00Z",
+                updatedAt: "2026-03-12T11:00:00Z",
+                warmupAvailability: {
+                  isAvailable: true,
+                },
+              });
+
+              return {
+                data: {
+                  totalInPayload: 1,
+                  importedCount: 1,
+                  skippedCount: 0,
+                },
+              };
+            },
             LoadWarmupScheduleStatus: async () => ({
               data: warmupScheduleStatus,
             }),
@@ -406,4 +503,55 @@ test("shows missed-run recovery and keeps shell feedback in sync after run-now",
   await expect(page.getByRole("dialog", { name: "错过了今日定时 warm-up" })).toHaveCount(0);
   await expect(page.getByText("已为全部 1 个可用账号发送补跑 warm-up 请求。")).toBeVisible();
   await expect(page.getByText("最近一次补跑 warm-up")).toBeVisible();
+});
+
+test("applies locale changes and refreshes accounts after slim backup import", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByLabel("语言").selectOption("en-US");
+  await page.getByRole("button", { name: "保存偏好设置" }).click();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Import slim text" }).click();
+  const dialog = page.getByRole("dialog", { name: "Import slim text" });
+  await dialog.getByLabel("Slim backup payload").fill("css1.newpayload");
+  await dialog.getByRole("button", { name: "Import slim text" }).click();
+
+  await expect(page.getByText("Imported Account")).toBeVisible();
+  await expect(page.getByText("Imported 1 of 1 accounts. Skipped 0.")).toBeVisible();
+});
+
+test("retries full backup import with the same path after passphrase is required", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByLabel("语言").selectOption("en-US");
+  await page.getByRole("button", { name: "保存偏好设置" }).click();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Import full backup" }).click();
+  await expect(
+    page.evaluate(
+      () =>
+        (window as typeof window & {
+          __fullImportCalls: Array<{ path: string; passphrase?: string }>;
+        }).__fullImportCalls,
+    ),
+  ).resolves.toEqual([{ path: "/tmp/import.cswf" }]);
+
+  const dialog = page.getByRole("dialog", { name: "Import full backup" });
+  await dialog.getByLabel("Passphrase").fill("secret-value");
+  await dialog.getByRole("button", { name: "Import full backup" }).click();
+
+  await expect(
+    page.evaluate(
+      () =>
+        (window as typeof window & {
+          __fullImportCalls: Array<{ path: string; passphrase?: string }>;
+        }).__fullImportCalls,
+    ),
+  ).resolves.toEqual([
+    { path: "/tmp/import.cswf" },
+    { path: "/tmp/import.cswf", passphrase: "secret-value" },
+  ]);
+  await expect(page.getByText("Full Backup Account")).toBeVisible();
 });

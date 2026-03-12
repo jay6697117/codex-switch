@@ -24,6 +24,42 @@ export interface BootstrapPayload {
   app: AppInfo;
 }
 
+export type BackupSecurityMode = "keychain" | "passphrase";
+
+export type LocalePreference = "system" | LocaleCode;
+
+export interface SettingsSnapshot {
+  localePreference: LocalePreference;
+  effectiveLocale: LocaleCode;
+  backupSecurityMode: BackupSecurityMode;
+}
+
+export interface SaveSettingsInput {
+  localePreference: LocalePreference;
+  backupSecurityMode: BackupSecurityMode;
+}
+
+export interface BackupImportSummary {
+  totalInPayload: number;
+  importedCount: number;
+  skippedCount: number;
+}
+
+export interface PathSelectionResult {
+  selected: boolean;
+  path?: string;
+}
+
+export interface ExportFullBackupInput {
+  path: string;
+  passphrase?: string;
+}
+
+export interface ImportFullBackupInput {
+  path: string;
+  passphrase?: string;
+}
+
 export interface StartOAuthLoginInput {
   accountName: string;
 }

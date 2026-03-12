@@ -18,6 +18,14 @@ export function DismissMissedRunToday() {
   return window['go']['main']['App']['DismissMissedRunToday']();
 }
 
+export function ExportFullBackup(arg1) {
+  return window['go']['main']['App']['ExportFullBackup'](arg1);
+}
+
+export function ExportSlimText() {
+  return window['go']['main']['App']['ExportSlimText']();
+}
+
 export function GetAccountUsage(arg1) {
   return window['go']['main']['App']['GetAccountUsage'](arg1);
 }
@@ -26,12 +34,24 @@ export function GetProcessStatus() {
   return window['go']['main']['App']['GetProcessStatus']();
 }
 
+export function ImportFullBackup(arg1) {
+  return window['go']['main']['App']['ImportFullBackup'](arg1);
+}
+
+export function ImportSlimText(arg1) {
+  return window['go']['main']['App']['ImportSlimText'](arg1);
+}
+
 export function LoadAccounts() {
   return window['go']['main']['App']['LoadAccounts']();
 }
 
 export function LoadBootstrap() {
   return window['go']['main']['App']['LoadBootstrap']();
+}
+
+export function LoadSettings() {
+  return window['go']['main']['App']['LoadSettings']();
 }
 
 export function LoadWarmupScheduleStatus() {
@@ -50,8 +70,20 @@ export function RunMissedWarmupNow() {
   return window['go']['main']['App']['RunMissedWarmupNow']();
 }
 
+export function SaveSettings(arg1) {
+  return window['go']['main']['App']['SaveSettings'](arg1);
+}
+
 export function SaveWarmupSchedule(arg1) {
   return window['go']['main']['App']['SaveWarmupSchedule'](arg1);
+}
+
+export function SelectFullExportPath() {
+  return window['go']['main']['App']['SelectFullExportPath']();
+}
+
+export function SelectFullImportPath() {
+  return window['go']['main']['App']['SelectFullImportPath']();
 }
 
 export function StartOAuthLogin(arg1) {
