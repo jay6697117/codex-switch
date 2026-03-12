@@ -13,17 +13,21 @@ import type {
   UsageCollection,
   WarmupAccountResult,
   WarmupAllResult,
+  WarmupScheduleInput,
+  WarmupScheduleStatus,
 } from "../contracts";
 import {
   cancelOAuthLoginViaWails,
   completeOAuthLoginViaWails,
   deleteAccountViaWails,
   getAccountUsageViaWails,
+  loadWarmupScheduleStatusViaWails,
   loadAccountsViaWails,
   loadBootstrapViaWails,
   loadProcessStatusViaWails,
   refreshAllUsageViaWails,
   renameAccountViaWails,
+  saveWarmupScheduleViaWails,
   startOAuthLoginViaWails,
   subscribeToRuntimeEvent,
   switchAccountViaWails,
@@ -67,6 +71,8 @@ export interface UsageService {
 export interface WarmupService {
   run(accountId: string): Promise<WarmupAccountResult>;
   runAll(): Promise<WarmupAllResult>;
+  loadScheduleStatus(): Promise<WarmupScheduleStatus>;
+  saveSchedule(input: WarmupScheduleInput): Promise<WarmupScheduleStatus>;
 }
 
 export interface AppServices {
@@ -105,6 +111,8 @@ export function createAppServices(): AppServices {
     warmup: {
       run: warmupAccountViaWails,
       runAll: warmupAllAccountsViaWails,
+      loadScheduleStatus: loadWarmupScheduleStatusViaWails,
+      saveSchedule: saveWarmupScheduleViaWails,
     },
     events: {
       subscribe: subscribeToRuntimeEvent,

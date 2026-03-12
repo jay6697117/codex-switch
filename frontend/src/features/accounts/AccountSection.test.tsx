@@ -13,6 +13,7 @@ import type {
   UsageCollection,
   WarmupAccountResult,
   WarmupAllResult,
+  WarmupScheduleStatus,
 } from "../../lib/contracts";
 import type { AppServices } from "../../lib/wails/services";
 
@@ -49,6 +50,17 @@ const idleProcessStatus: ProcessStatus = {
   foregroundCount: 0,
   backgroundCount: 0,
   canSwitch: true,
+};
+
+const defaultWarmupScheduleStatus: WarmupScheduleStatus = {
+  schedule: {
+    enabled: true,
+    localTime: "09:00",
+    accountIds: ["acc-active", "acc-side"],
+  },
+  validAccountIds: ["acc-active", "acc-side"],
+  missedRunToday: false,
+  nextRunLocalIso: "2026-03-12T09:00:00+08:00",
 };
 
 function createServices(options?: {
@@ -206,6 +218,8 @@ function createServices(options?: {
     warmup: {
       run: vi.fn(async (accountId: string) => warmupById[accountId]),
       runAll: vi.fn().mockResolvedValue(warmupAllResult),
+      loadScheduleStatus: vi.fn().mockResolvedValue(defaultWarmupScheduleStatus),
+      saveSchedule: vi.fn().mockResolvedValue(defaultWarmupScheduleStatus),
     },
   };
 }

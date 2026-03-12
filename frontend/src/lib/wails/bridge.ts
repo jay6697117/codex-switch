@@ -15,6 +15,8 @@ import type {
   UsageCollection,
   WarmupAccountResult,
   WarmupAllResult,
+  WarmupScheduleInput,
+  WarmupScheduleStatus,
 } from "../contracts";
 
 const fallbackBootstrapPayload: BootstrapPayload = {
@@ -190,6 +192,28 @@ export async function warmupAllAccountsViaWails(): Promise<WarmupAllResult> {
   }
 
   return unwrapEnvelope(await warmupAllAccounts(), "warmup.execute_failed");
+}
+
+export async function loadWarmupScheduleStatusViaWails(): Promise<WarmupScheduleStatus> {
+  const loadWarmupScheduleStatus = window.go?.main?.App?.LoadWarmupScheduleStatus;
+
+  if (!loadWarmupScheduleStatus) {
+    throw { code: "warmup.schedule_load_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await loadWarmupScheduleStatus(), "warmup.schedule_load_failed");
+}
+
+export async function saveWarmupScheduleViaWails(
+  input: WarmupScheduleInput,
+): Promise<WarmupScheduleStatus> {
+  const saveWarmupSchedule = window.go?.main?.App?.SaveWarmupSchedule;
+
+  if (!saveWarmupSchedule) {
+    throw { code: "warmup.schedule_load_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await saveWarmupSchedule(input), "warmup.schedule_load_failed");
 }
 
 export function subscribeToRuntimeEvent<T>(

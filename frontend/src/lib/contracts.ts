@@ -84,6 +84,27 @@ export interface WarmupAllResult {
   summary: WarmupSummary;
 }
 
+export interface WarmupSchedule {
+  enabled: boolean;
+  localTime: string;
+  accountIds: string[];
+  lastRunLocalDate?: string;
+  lastMissedPromptLocalDate?: string;
+}
+
+export interface WarmupScheduleInput {
+  enabled: boolean;
+  localTime: string;
+  accountIds: string[];
+}
+
+export interface WarmupScheduleStatus {
+  schedule?: WarmupSchedule;
+  validAccountIds: string[];
+  missedRunToday: boolean;
+  nextRunLocalIso?: string;
+}
+
 export interface RenameAccountInput {
   id: string;
   displayName: string;

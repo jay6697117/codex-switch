@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"time"
 
 	"codex-switch/internal/accounts"
 	"codex-switch/internal/auth"
@@ -180,6 +181,22 @@ func (a *App) WarmupAllAccounts() contracts.ResultEnvelope[contracts.WarmupAllRe
 	return wrapResult(mapWarmupAllResult(result), err, "warmup.execute_failed")
 }
 
+func (a *App) LoadWarmupScheduleStatus() contracts.ResultEnvelope[contracts.WarmupScheduleStatus] {
+	status, err := a.loadWarmupScheduleStatus(a.requestContext())
+	return wrapResult(status, err, "warmup.schedule_load_failed")
+}
+
+func (a *App) SaveWarmupSchedule(
+	input contracts.WarmupScheduleInput,
+) contracts.ResultEnvelope[contracts.WarmupScheduleStatus] {
+	if _, err := a.scheduleService.Save(a.requestContext(), input); err != nil {
+		return wrapResult(contracts.WarmupScheduleStatus{}, err, "warmup.schedule_load_failed")
+	}
+
+	status, err := a.loadWarmupScheduleStatus(a.requestContext())
+	return wrapResult(status, err, "warmup.schedule_load_failed")
+}
+
 func (a *App) requestContext() context.Context {
 	if a.ctx != nil {
 		return a.ctx
@@ -201,6 +218,16 @@ func wrapResult[T any](data T, err error, fallbackCode string) contracts.ResultE
 	return contracts.ResultEnvelope[T]{
 		Error: &contracts.AppError{Code: fallbackCode},
 	}
+}
+
+func (a *App) loadWarmupScheduleStatus(
+	ctx context.Context,
+) (contracts.WarmupScheduleStatus, error) {
+	if a.schedulerRuntime != nil {
+		return a.schedulerRuntime.LoadStatus(ctx)
+	}
+
+	return a.scheduleService.LoadStatus(ctx, time.Now())
 }
 
 func (a *App) decorateAccountsSnapshot(snapshot contracts.AccountsSnapshot) contracts.AccountsSnapshot {

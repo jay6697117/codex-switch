@@ -30,12 +30,20 @@ export function LoadBootstrap() {
   return window['go']['main']['App']['LoadBootstrap']();
 }
 
+export function LoadWarmupScheduleStatus() {
+  return window['go']['main']['App']['LoadWarmupScheduleStatus']();
+}
+
 export function RefreshAllUsage() {
   return window['go']['main']['App']['RefreshAllUsage']();
 }
 
 export function RenameAccount(arg1) {
   return window['go']['main']['App']['RenameAccount'](arg1);
+}
+
+export function SaveWarmupSchedule(arg1) {
+  return window['go']['main']['App']['SaveWarmupSchedule'](arg1);
 }
 
 export function StartOAuthLogin(arg1) {

@@ -742,6 +742,96 @@ export namespace contracts {
 		    return a;
 		}
 	}
+	export class WarmupSchedule {
+	    enabled: boolean;
+	    localTime: string;
+	    accountIds: string[];
+	    lastRunLocalDate?: string;
+	    lastMissedPromptLocalDate?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WarmupSchedule(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.localTime = source["localTime"];
+	        this.accountIds = source["accountIds"];
+	        this.lastRunLocalDate = source["lastRunLocalDate"];
+	        this.lastMissedPromptLocalDate = source["lastMissedPromptLocalDate"];
+	    }
+	}
+	export class WarmupScheduleStatus {
+	    schedule?: WarmupSchedule;
+	    validAccountIds: string[];
+	    missedRunToday: boolean;
+	    nextRunLocalIso?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WarmupScheduleStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.schedule = this.convertValues(source["schedule"], WarmupSchedule);
+	        this.validAccountIds = source["validAccountIds"];
+	        this.missedRunToday = source["missedRunToday"];
+	        this.nextRunLocalIso = source["nextRunLocalIso"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_ {
+	    data?: WarmupScheduleStatus;
+	    message?: AppMessage;
+	    error?: AppError;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = this.convertValues(source["data"], WarmupScheduleStatus);
+	        this.message = this.convertValues(source["message"], AppMessage);
+	        this.error = this.convertValues(source["error"], AppError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class StartOAuthLoginInput {
 	    accountName: string;
 	
@@ -773,6 +863,24 @@ export namespace contracts {
 	
 	
 	
+	
+	
+	export class WarmupScheduleInput {
+	    enabled: boolean;
+	    localTime: string;
+	    accountIds: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new WarmupScheduleInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.localTime = source["localTime"];
+	        this.accountIds = source["accountIds"];
+	    }
+	}
 	
 
 }

@@ -23,6 +23,7 @@ const MASKED_VALUE = "••••••••";
 
 interface AccountSectionProps {
   services: Pick<AppServices, "accounts" | "oauth" | "process" | "usage" | "warmup">;
+  onSnapshotChange?: (snapshot: AccountsSnapshot) => void;
 }
 
 interface WarmupFeedback {
@@ -464,7 +465,7 @@ function AccountCard({
   );
 }
 
-export function AccountSection({ services }: AccountSectionProps) {
+export function AccountSection({ services, onSnapshotChange }: AccountSectionProps) {
   const { t } = useTranslation(["accounts", "auth", "errors", "usage", "warmup"]);
   const [snapshot, setSnapshot] = useState<AccountsSnapshot | null>(null);
   const [processStatus, setProcessStatus] = useState<ProcessStatus | null>(null);
@@ -499,6 +500,7 @@ export function AccountSection({ services }: AccountSectionProps) {
 
   const applySnapshot = (nextSnapshot: AccountsSnapshot) => {
     setSnapshot(nextSnapshot);
+    onSnapshotChange?.(nextSnapshot);
     setUsageByAccountId((current) => pruneUsageMap(current, nextSnapshot));
     setMaskedAccountIds((current) => pruneMaskedAccounts(current, nextSnapshot));
     setLatestWarmupByAccountId((current) =>

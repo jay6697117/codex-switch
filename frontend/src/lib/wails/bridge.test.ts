@@ -4,9 +4,11 @@ import {
   cancelOAuthLoginViaWails,
   completeOAuthLoginViaWails,
   getAccountUsageViaWails,
+  loadWarmupScheduleStatusViaWails,
   loadAccountsViaWails,
   loadProcessStatusViaWails,
   refreshAllUsageViaWails,
+  saveWarmupScheduleViaWails,
   startOAuthLoginViaWails,
   switchAccountViaWails,
   warmupAccountViaWails,
@@ -376,6 +378,76 @@ describe("wails bridge", () => {
         failedAccounts: 0,
         skippedAccounts: 1,
       },
+    });
+  });
+
+  test("unwraps warmup schedule status envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          LoadWarmupScheduleStatus: vi.fn().mockResolvedValue({
+            data: {
+              schedule: {
+                enabled: true,
+                localTime: "09:15",
+                accountIds: ["acct-1", "acct-2"],
+              },
+              validAccountIds: ["acct-1", "acct-2"],
+              missedRunToday: false,
+              nextRunLocalIso: "2026-03-12T09:15:00+08:00",
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(loadWarmupScheduleStatusViaWails()).resolves.toEqual({
+      schedule: {
+        enabled: true,
+        localTime: "09:15",
+        accountIds: ["acct-1", "acct-2"],
+      },
+      validAccountIds: ["acct-1", "acct-2"],
+      missedRunToday: false,
+      nextRunLocalIso: "2026-03-12T09:15:00+08:00",
+    });
+  });
+
+  test("unwraps warmup schedule save envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          SaveWarmupSchedule: vi.fn().mockResolvedValue({
+            data: {
+              schedule: {
+                enabled: true,
+                localTime: "10:00",
+                accountIds: ["acct-1"],
+              },
+              validAccountIds: ["acct-1"],
+              missedRunToday: false,
+              nextRunLocalIso: "2026-03-12T10:00:00+08:00",
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(
+      saveWarmupScheduleViaWails({
+        enabled: true,
+        localTime: "10:00",
+        accountIds: ["acct-1"],
+      }),
+    ).resolves.toEqual({
+      schedule: {
+        enabled: true,
+        localTime: "10:00",
+        accountIds: ["acct-1"],
+      },
+      validAccountIds: ["acct-1"],
+      missedRunToday: false,
+      nextRunLocalIso: "2026-03-12T10:00:00+08:00",
     });
   });
 });

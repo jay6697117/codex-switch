@@ -48,6 +48,18 @@ describe("AppShell", () => {
       warmup: {
         run: vi.fn(),
         runAll: vi.fn(),
+        loadScheduleStatus: vi.fn().mockResolvedValue({
+          schedule: {
+            enabled: true,
+            localTime: "09:30",
+            accountIds: [],
+          },
+          validAccountIDs: [],
+          validAccountIds: [],
+          missedRunToday: false,
+          nextRunLocalIso: "2026-03-12T09:30:00+08:00",
+        }),
+        saveSchedule: vi.fn(),
       },
     };
 
@@ -56,9 +68,11 @@ describe("AppShell", () => {
     expect(await screen.findByText("Codex Switcher")).toBeInTheDocument();
     expect(await screen.findByText("多账号管理器骨架")).toBeInTheDocument();
     expect(await screen.findByText("账号工作区")).toBeInTheDocument();
+    expect(await screen.findByText("每日 warm-up 计划")).toBeInTheDocument();
     expect(await screen.findByText("还没有账号")).toBeInTheDocument();
     expect(services.bootstrap.load).toHaveBeenCalledTimes(1);
     expect(services.accounts.load).toHaveBeenCalledTimes(1);
     expect(services.process.getStatus).toHaveBeenCalledTimes(1);
+    expect(services.warmup.loadScheduleStatus).toHaveBeenCalledTimes(1);
   });
 });

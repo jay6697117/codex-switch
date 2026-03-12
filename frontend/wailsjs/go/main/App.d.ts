@@ -16,9 +16,13 @@ export function LoadAccounts():Promise<contracts.ResultEnvelope_codex_switch_int
 
 export function LoadBootstrap():Promise<contracts.BootstrapPayload>;
 
+export function LoadWarmupScheduleStatus():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
+
 export function RefreshAllUsage():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_UsageCollection_>;
 
 export function RenameAccount(arg1:contracts.RenameAccountInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountsSnapshot_>;
+
+export function SaveWarmupSchedule(arg1:contracts.WarmupScheduleInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
 
 export function StartOAuthLogin(arg1:contracts.StartOAuthLoginInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_OAuthLoginInfo_>;
 

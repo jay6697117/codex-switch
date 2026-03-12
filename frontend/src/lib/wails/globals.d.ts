@@ -14,6 +14,8 @@ import type {
   UsageCollection,
   WarmupAccountResult,
   WarmupAllResult,
+  WarmupScheduleInput,
+  WarmupScheduleStatus,
 } from "../contracts";
 
 declare global {
@@ -32,6 +34,10 @@ declare global {
             accountId: string,
           ) => Promise<ResultEnvelope<WarmupAccountResult>>;
           WarmupAllAccounts?: () => Promise<ResultEnvelope<WarmupAllResult>>;
+          LoadWarmupScheduleStatus?: () => Promise<ResultEnvelope<WarmupScheduleStatus>>;
+          SaveWarmupSchedule?: (
+            input: WarmupScheduleInput,
+          ) => Promise<ResultEnvelope<WarmupScheduleStatus>>;
           RenameAccount?: (
             input: RenameAccountInput,
           ) => Promise<ResultEnvelope<AccountsSnapshot>>;

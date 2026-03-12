@@ -115,6 +115,91 @@ body {
   margin-top: 24px;
 }
 
+.warmup-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.warmup-summary-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.warmup-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.warmup-summary-label {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.warmup-summary-item strong {
+  font-size: 1.15rem;
+  color: var(--ink-strong);
+}
+
+.warmup-section-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.warmup-config-dialog {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.warmup-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.warmup-form-row-column {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.warmup-form-header,
+.warmup-inline-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.warmup-account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.warmup-account-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-strong);
+}
+
+.warmup-validation {
+  margin: 0;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 .accounts-empty-state,
 .accounts-group {
   display: flex;
