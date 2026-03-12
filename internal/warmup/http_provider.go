@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"codex-switch/internal/buildinfo"
 )
 
 const (
 	defaultChatGPTBaseURL = "https://chatgpt.com/backend-api"
 	defaultOpenAIBaseURL  = "https://api.openai.com/v1"
-	defaultUserAgent      = "codex-switch/0.1.0"
 )
 
 type HTTPProvider struct {
@@ -51,7 +52,7 @@ func (p *HTTPProvider) WarmChatGPT(ctx context.Context, request ChatGPTWarmupReq
 	}
 
 	httpRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", request.AccessToken))
-	httpRequest.Header.Set("User-Agent", defaultUserAgent)
+	httpRequest.Header.Set("User-Agent", buildinfo.UserAgent())
 	if request.AccountID != nil && *request.AccountID != "" {
 		httpRequest.Header.Set("chatgpt-account-id", *request.AccountID)
 	}
@@ -77,7 +78,7 @@ func (p *HTTPProvider) WarmAPIKey(ctx context.Context, request APIKeyWarmupReque
 	}
 
 	httpRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", request.APIKey))
-	httpRequest.Header.Set("User-Agent", defaultUserAgent)
+	httpRequest.Header.Set("User-Agent", buildinfo.UserAgent())
 
 	response, err := p.httpClient.Do(httpRequest)
 	if err != nil {

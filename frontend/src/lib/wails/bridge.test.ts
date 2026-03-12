@@ -26,6 +26,22 @@ import {
 } from "./bridge";
 
 describe("wails bridge", () => {
+  test("returns a development bootstrap payload when Wails bindings are unavailable", async () => {
+    window.go = undefined;
+
+    const { loadBootstrapViaWails } = await import("./bridge");
+
+    await expect(loadBootstrapViaWails()).resolves.toEqual({
+      locale: "en-US",
+      supportedLocales: ["zh-CN", "en-US"],
+      hasManualOverride: false,
+      app: {
+        name: "Codex Switch",
+        version: "0.1.0-dev",
+      },
+    });
+  });
+
   test("unwraps process status envelopes", async () => {
     window.go = {
       main: {

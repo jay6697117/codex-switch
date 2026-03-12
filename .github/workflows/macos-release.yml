@@ -1,0 +1,254 @@
+name: macos-release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release version without the v prefix"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    env:
+      APP_NAME: Codex Switch
+      APP_FILENAME: codex-switch
+      RELEASE_ASSET_DIR: release-artifacts
+      APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+      APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+      APPLE_NOTARY_PRIVATE_KEY: ${{ secrets.APPLE_NOTARY_PRIVATE_KEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.11.0
+
+      - name: Resolve release version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -n "${{ github.event.inputs.release_version }}" ]]; then
+            release_version="${{ github.event.inputs.release_version }}"
+          elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            release_version="${GITHUB_REF_NAME#v}"
+          else
+            release_version="0.1.0-dev"
+          fi
+
+          release_tag="v${release_version}"
+
+          {
+            echo "RELEASE_VERSION=${release_version}"
+            echo "RELEASE_TAG=${release_tag}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Detect signing readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          has_signing_secrets=true
+          for name in \
+            APPLE_CERTIFICATE_P12_BASE64 \
+            APPLE_CERTIFICATE_PASSWORD \
+            APPLE_SIGNING_IDENTITY \
+            APPLE_TEAM_ID \
+            APPLE_NOTARY_KEY_ID \
+            APPLE_NOTARY_ISSUER_ID \
+            APPLE_NOTARY_PRIVATE_KEY
+          do
+            if [[ -z "${!name:-}" ]]; then
+              has_signing_secrets=false
+              break
+            fi
+          done
+
+          echo "HAS_SIGNING_SECRETS=${has_signing_secrets}" >> "${GITHUB_ENV}"
+
+      - name: Build universal app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_VERSION="${RELEASE_VERSION}" bash ./scripts/build_macos_release.sh
+
+      - name: Prepare release asset paths
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p "${RELEASE_ASSET_DIR}/dmg-root"
+          app_path="build/bin/${APP_FILENAME}.app"
+          dmg_path="${RELEASE_ASSET_DIR}/${APP_FILENAME}-${RELEASE_VERSION}.dmg"
+          checksums_path="${RELEASE_ASSET_DIR}/checksums.txt"
+          release_notes_path="${RELEASE_ASSET_DIR}/release-notes.md"
+
+          cp -R "${app_path}" "${RELEASE_ASSET_DIR}/dmg-root/${APP_NAME}.app"
+
+          {
+            echo "APP_PATH=${app_path}"
+            echo "DMG_PATH=${dmg_path}"
+            echo "CHECKSUMS_PATH=${checksums_path}"
+            echo "RELEASE_NOTES_PATH=${release_notes_path}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Import signing certificate
+        if: env.HAS_SIGNING_SECRETS == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          certificate_path="${RUNNER_TEMP}/signing-cert.p12"
+          keychain_path="${RUNNER_TEMP}/codex-switch-signing.keychain-db"
+          profile_path="${RUNNER_TEMP}/notary-api-key.p8"
+
+          echo "${APPLE_CERTIFICATE_P12_BASE64}" | base64 --decode > "${certificate_path}"
+          printf "%s" "${APPLE_NOTARY_PRIVATE_KEY}" > "${profile_path}"
+
+          security create-keychain -p "${APPLE_CERTIFICATE_PASSWORD}" "${keychain_path}"
+          security default-keychain -s "${keychain_path}"
+          security unlock-keychain -p "${APPLE_CERTIFICATE_PASSWORD}" "${keychain_path}"
+          security import "${certificate_path}" -k "${keychain_path}" -P "${APPLE_CERTIFICATE_PASSWORD}" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "${APPLE_CERTIFICATE_PASSWORD}" "${keychain_path}"
+
+          {
+            echo "SIGNING_KEYCHAIN=${keychain_path}"
+            echo "NOTARY_API_KEY_PATH=${profile_path}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Codesign app bundle
+        if: env.HAS_SIGNING_SECRETS == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          codesign --force --deep --options runtime --timestamp --sign "${APPLE_SIGNING_IDENTITY}" "${APP_PATH}"
+
+      - name: Create DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          hdiutil create -volname "${APP_NAME}" -srcfolder "${RELEASE_ASSET_DIR}/dmg-root" -ov -format UDZO "${DMG_PATH}"
+
+      - name: Codesign DMG
+        if: env.HAS_SIGNING_SECRETS == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          codesign --force --timestamp --sign "${APPLE_SIGNING_IDENTITY}" "${DMG_PATH}"
+
+      - name: Notarize artifacts
+        if: env.HAS_SIGNING_SECRETS == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun notarytool submit "${DMG_PATH}" \
+            --key "${NOTARY_API_KEY_PATH}" \
+            --key-id "${APPLE_NOTARY_KEY_ID}" \
+            --issuer "${APPLE_NOTARY_ISSUER_ID}" \
+            --wait
+
+      - name: Staple and verify artifacts
+        if: env.HAS_SIGNING_SECRETS == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun stapler staple "${APP_PATH}"
+          xcrun stapler staple "${DMG_PATH}"
+          codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+          codesign --verify --strict --verbose=2 "${DMG_PATH}"
+          spctl --assess --type exec --verbose "${APP_PATH}"
+          spctl --assess --type open --verbose "${DMG_PATH}"
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          shasum -a 256 "${DMG_PATH}" > "${CHECKSUMS_PATH}"
+
+      - name: Generate release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          signing_status="Pending external signing setup"
+          if [[ "${HAS_SIGNING_SECRETS}" == "true" ]]; then
+            signing_status="Signed and notarized"
+          fi
+
+          cat > "${RELEASE_NOTES_PATH}" <<EOF
+          # Codex Switch ${RELEASE_TAG}
+
+          ## Assets
+
+          - ${APP_FILENAME}-${RELEASE_VERSION}.dmg
+          - checksums.txt
+
+          ## Install Notes
+
+          1. Download the DMG from this draft release.
+          2. Drag ${APP_NAME}.app into Applications.
+          3. Launch the app once from Finder and complete the packaged smoke checklist.
+
+          ## Upgrade Notes
+
+          - Existing account, warmup, backup, and settings data remain in the same user config directory.
+          - Replace older app bundles with the new notarized build before opening it.
+
+          ## Signing Status
+
+          - ${signing_status}
+          EOF
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release-${{ env.RELEASE_VERSION }}
+          path: |
+            ${{ env.DMG_PATH }}
+            ${{ env.CHECKSUMS_PATH }}
+            ${{ env.RELEASE_NOTES_PATH }}
+
+      - name: Create or update GitHub release draft
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release edit "${RELEASE_TAG}" --draft --notes-file "${RELEASE_NOTES_PATH}" --title "Codex Switch ${RELEASE_TAG}"
+          else
+            gh release create "${RELEASE_TAG}" --draft --title "Codex Switch ${RELEASE_TAG}" --notes-file "${RELEASE_NOTES_PATH}"
+          fi
+
+          gh release upload "${RELEASE_TAG}" "${DMG_PATH}" "${CHECKSUMS_PATH}" --clobber

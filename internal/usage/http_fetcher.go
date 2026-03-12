@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"codex-switch/internal/buildinfo"
 )
 
 const (
 	defaultBackendAPI = "https://chatgpt.com/backend-api"
-	defaultUserAgent  = "codex-switch/0.1.0"
 )
 
 type HTTPFetcher struct {
@@ -50,7 +51,7 @@ func (f *HTTPFetcher) FetchChatGPTUsage(
 	}
 
 	httpRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", request.AccessToken))
-	httpRequest.Header.Set("User-Agent", defaultUserAgent)
+	httpRequest.Header.Set("User-Agent", buildinfo.UserAgent())
 	if request.AccountID != nil && *request.AccountID != "" {
 		httpRequest.Header.Set("chatgpt-account-id", *request.AccountID)
 	}

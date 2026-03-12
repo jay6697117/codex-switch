@@ -26,13 +26,15 @@ import type {
   WarmupScheduleStatus,
 } from "../contracts";
 
+const fallbackAppVersion = import.meta.env.VITE_APP_VERSION || "0.1.0-dev";
+
 const fallbackBootstrapPayload: BootstrapPayload = {
   locale: "en-US",
   supportedLocales: ["zh-CN", "en-US"],
   hasManualOverride: false,
   app: {
     name: "Codex Switch",
-    version: "0.1.0",
+    version: fallbackAppVersion,
   },
 };
 

@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 Phase: 6 of 6 (Localization Completion and Release Readiness)
 Plan: 2 of 3 completed in current phase
-Status: 06-02 complete; ready to execute 06-03
-Last activity: 2026-03-12 — Completed parity regression matrix across Go, frontend, and mocked shell flows
+Status: 06-03 implementation complete; waiting for signing secrets, release workflow execution, and packaged-app smoke
+Last activity: 2026-03-12 — Added macOS release workflow, version injection, release docs, and local release-build verification
 
-Progress: [████████████] 97%
+Progress: [████████████] 99%
 
 ## Performance Metrics
 
@@ -60,15 +60,17 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Execute Phase 6: 06-03 macOS packaging and release verification
+- Run `.github/workflows/macos-release.yml` with Apple/GitHub release secrets configured
+- Validate signed/notarized DMG with `docs/release/macos-packaged-smoke.md`
+- Only after the above succeeds, close `QUAL-02` and mark Phase 6 complete
 
 ### Blockers/Concerns
 
 - Public release still depends on Apple signing/notarization credentials and GitHub release automation secrets
-- The current repo still needs release-asset workflow and packaged-app validation before `QUAL-02` can be considered closed
+- `QUAL-02` cannot be considered closed until a real signed/notarized DMG is produced and the packaged-app smoke checklist passes
 
 ## Session Continuity
 
-Last session: 2026-03-12 22:00 CST
-Stopped at: 06-02 completed and verified; next action is 06-03 release packaging and verification
+Last session: 2026-03-12 23:30 CST
+Stopped at: 06-03 implementation is ready and locally verified; next action is external release verification with secrets and packaged smoke
 Resume file: None

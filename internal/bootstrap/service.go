@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 
+	"codex-switch/internal/buildinfo"
 	"codex-switch/internal/contracts"
 	platformlocale "codex-switch/internal/platform/locale"
 )
@@ -26,8 +27,8 @@ func NewService(store PreferenceStore, detector LocaleDetector) *Service {
 		store:    store,
 		detector: detector,
 		appInfo: contracts.AppInfo{
-			Name:    "Codex Switch",
-			Version: "0.1.0",
+			Name:    buildinfo.AppName,
+			Version: buildinfo.Version,
 		},
 	}
 }

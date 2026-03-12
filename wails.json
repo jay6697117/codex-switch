@@ -6,6 +6,13 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "info": {
+    "companyName": "SteveZhang",
+    "productName": "Codex Switch",
+    "productVersion": "0.1.0-dev",
+    "comments": "Multi-account manager for Codex CLI",
+    "copyright": "Copyright © 2026 SteveZhang"
+  },
   "author": {
     "name": "SteveZhang"
   }

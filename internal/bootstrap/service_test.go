@@ -72,3 +72,17 @@ func TestServiceLoadFallsBackToEnglishForUnsupportedLocales(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, contracts.LocaleEnUS, payload.Locale)
 }
+
+func TestServiceLoadUsesDevelopmentVersionByDefault(t *testing.T) {
+	t.Parallel()
+
+	service := NewService(
+		fakePreferenceStore{},
+		fakeLocaleDetector{locale: "en-US"},
+	)
+
+	payload, err := service.Load(context.Background())
+
+	require.NoError(t, err)
+	require.Equal(t, "0.1.0-dev", payload.App.Version)
+}
