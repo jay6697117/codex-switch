@@ -4,22 +4,22 @@
 
 See: .planning/PROJECT.md (updated 2026-03-11)
 
-**Core value:** 本地、安全、可预期地管理和切换多个 Codex 账号，同时把原项目的隐式桌面行为抽成清晰、可测试、可国际化的前后端契约
-**Current focus:** Phase 5 - Backup and Preference Management
+**Core value:** 本地、安全、可预期地管理和切换多个 Codex 账号，同时把原项目的隐式桌面行为抽成清晰、可测试、可国际化的前后端契约  
+**Current focus:** Phase 6 - Localization Completion and Release Readiness
 
 ## Current Position
 
-Phase: 5 of 6 (Backup and Preference Management)
+Phase: 6 of 6 (Localization Completion and Release Readiness)
 Plan: 0 of 3 completed in current phase
-Status: Phase 4 is complete; Phase 5 has not started and is ready for discuss/plan work
-Last activity: 2026-03-12 — Completed 04-03 runtime-event warm-up feedback and missed-run recovery flows
+Status: Phase 6 planning is complete; ready to execute 06-01
+Last activity: 2026-03-12 — Planned localization closure, regression hardening, and macOS release readiness
 
-Progress: [████████░░] 72%
+Progress: [██████████] 88%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 16
 - Average duration: n/a
 - Total execution time: n/a
 
@@ -31,10 +31,10 @@ Progress: [████████░░] 72%
 | 2 | 3 | n/a | n/a |
 | 3 | 3 | n/a | n/a |
 | 4 | 3 | n/a | n/a |
-| 5 | 0 | n/a | n/a |
+| 5 | 3 | n/a | n/a |
 
 **Recent Trend:**
-- Last 5 plans: 03-02, 03-03, 04-01, 04-02, 04-03
+- Last 5 plans: 04-02, 04-03, 05-01, 05-02, 05-03
 - Trend: Steady
 
 ## Accumulated Context
@@ -49,31 +49,28 @@ Recent decisions affecting current work:
 - [Init]: Treat full bilingual UX as a v1 hard requirement, including backend-originated statuses
 - [Phase 2]: Deleting the active account auto-promotes the next available account
 - [Phase 2]: Switching while Codex is running requires explicit confirmation and graceful restart handling
-- [Phase 2]: Account name/email stay visible by default, with per-account and global masking controls
-- [Phase 2]: Account switching rewrites `auth.json` canonically and rolls back on synchronous failure
-- [Phase 2]: The Wails shell hosts account cards and blocks switch actions behind a first-class confirmation dialog
 - [Phase 3]: Add Account remains OAuth-only and continues to exclude `Import File`
-- [Phase 3]: Usage state is stored separately from account snapshots and refreshed explicitly per-account or globally
-- [Phase 3]: OAuth browser navigation is triggered through Wails runtime `BrowserOpenURL()`
-- [Phase 4]: Warm-up availability is attached to account snapshots so the client never infers provider rules
-- [Phase 4]: Manual warm-up results are normalized into per-account success/failed/skipped payloads instead of raw provider errors
-- [Phase 4]: Account shell keeps recent manual warm-up feedback local and does not mark scheduled completion state
-- [Phase 4]: Schedule status is read through the scheduler runtime so derived next-run and missed-run semantics stay consistent
 - [Phase 4]: Warmup schedule configuration lives in a dedicated Warmup section and reuses shared account snapshots instead of reloading accounts
-- [Phase 4]: Wails runtime events are consumed as raw warm-up payloads, not synthetic `{name,data}` envelopes
 - [Phase 4]: Missed-run recovery refreshes schedule status through typed facades, while visible scheduled/catch-up feedback stays event-driven
+- [Phase 5]: Origin slim/full imports are accepted, but new full exports only target new-project round-trip compatibility
+- [Phase 5]: Backup security mode defaults to `keychain` and is persisted through `preferences.json`
+- [Phase 5]: Settings lives as a dedicated shell section, and successful backup imports increment a shell-level revision to refresh account state
+- [Phase 6]: Public v1 release targets signed and notarized universal macOS DMG delivery through GitHub Releases
+- [Phase 6]: Core flows must have zero mixed-language UI, while missing translation keys fall back to English with observability
 
 ### Pending Todos
 
-- Plan Phase 5: backup compatibility, security mode persistence, locale override settings, and the settings page
+- Execute Phase 6: 06-01 localized message mapping and copy closure
+- Execute Phase 6: 06-02 parity regression matrix
+- Execute Phase 6: 06-03 macOS packaging and release verification
 
 ### Blockers/Concerns
 
-- Backup compatibility with old origin exports must be decided before Phase 5 implementation starts
-- Phase 5 should decide whether legacy origin backup formats are supported directly, migrated, or explicitly rejected with guidance
+- Public release still depends on Apple signing/notarization credentials and GitHub release automation secrets
+- The current repo still needs release-asset workflow and packaged-app validation before `QUAL-02` can be considered closed
 
 ## Session Continuity
 
-Last session: 2026-03-12 11:50 CST
-Stopped at: Phase 4 completed with 04-03 summary written; next action is Phase 5 discuss/plan
+Last session: 2026-03-12 14:30 CST
+Stopped at: Phase 6 planning complete with context, research, validation strategy, and 3 executable plans; next action is 06-01 implementation
 Resume file: None
