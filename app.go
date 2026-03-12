@@ -197,6 +197,37 @@ func (a *App) SaveWarmupSchedule(
 	return wrapResult(status, err, "warmup.schedule_load_failed")
 }
 
+func (a *App) DismissMissedRunToday() contracts.ResultEnvelope[contracts.WarmupScheduleStatus] {
+	if a.schedulerRuntime == nil {
+		status, err := a.loadWarmupScheduleStatus(a.requestContext())
+		return wrapResult(status, err, "warmup.schedule_load_failed")
+	}
+
+	if err := a.schedulerRuntime.DismissMissedRunToday(a.requestContext()); err != nil {
+		return wrapResult(contracts.WarmupScheduleStatus{}, err, "warmup.schedule_load_failed")
+	}
+
+	status, err := a.loadWarmupScheduleStatus(a.requestContext())
+	return wrapResult(status, err, "warmup.schedule_load_failed")
+}
+
+func (a *App) RunMissedWarmupNow() contracts.ResultEnvelope[contracts.WarmupScheduleStatus] {
+	if a.schedulerRuntime == nil {
+		return wrapResult(
+			contracts.WarmupScheduleStatus{},
+			contracts.AppError{Code: "warmup.execute_failed"},
+			"warmup.execute_failed",
+		)
+	}
+
+	if _, err := a.schedulerRuntime.RunMissedWarmupNow(a.requestContext()); err != nil {
+		return wrapResult(contracts.WarmupScheduleStatus{}, err, "warmup.execute_failed")
+	}
+
+	status, err := a.loadWarmupScheduleStatus(a.requestContext())
+	return wrapResult(status, err, "warmup.execute_failed")
+}
+
 func (a *App) requestContext() context.Context {
 	if a.ctx != nil {
 		return a.ctx

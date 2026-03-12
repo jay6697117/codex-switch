@@ -8,6 +8,8 @@ export function CompleteOAuthLogin():Promise<contracts.ResultEnvelope_codex_swit
 
 export function DeleteAccount(arg1:string):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountsSnapshot_>;
 
+export function DismissMissedRunToday():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
+
 export function GetAccountUsage(arg1:string):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountUsageSnapshot_>;
 
 export function GetProcessStatus():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_ProcessStatus_>;
@@ -21,6 +23,8 @@ export function LoadWarmupScheduleStatus():Promise<contracts.ResultEnvelope_code
 export function RefreshAllUsage():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_UsageCollection_>;
 
 export function RenameAccount(arg1:contracts.RenameAccountInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountsSnapshot_>;
+
+export function RunMissedWarmupNow():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
 
 export function SaveWarmupSchedule(arg1:contracts.WarmupScheduleInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
 

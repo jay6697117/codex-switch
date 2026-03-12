@@ -3,11 +3,13 @@ import { describe, expect, test, vi } from "vitest";
 import {
   cancelOAuthLoginViaWails,
   completeOAuthLoginViaWails,
+  dismissMissedRunTodayViaWails,
   getAccountUsageViaWails,
   loadWarmupScheduleStatusViaWails,
   loadAccountsViaWails,
   loadProcessStatusViaWails,
   refreshAllUsageViaWails,
+  runMissedWarmupNowViaWails,
   saveWarmupScheduleViaWails,
   startOAuthLoginViaWails,
   switchAccountViaWails,
@@ -448,6 +450,72 @@ describe("wails bridge", () => {
       validAccountIds: ["acct-1"],
       missedRunToday: false,
       nextRunLocalIso: "2026-03-12T10:00:00+08:00",
+    });
+  });
+
+  test("unwraps missed-run dismiss envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          DismissMissedRunToday: vi.fn().mockResolvedValue({
+            data: {
+              schedule: {
+                enabled: true,
+                localTime: "10:00",
+                accountIds: ["acct-1"],
+              },
+              validAccountIds: ["acct-1"],
+              missedRunToday: false,
+              nextRunLocalIso: "2026-03-13T10:00:00+08:00",
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(dismissMissedRunTodayViaWails()).resolves.toEqual({
+      schedule: {
+        enabled: true,
+        localTime: "10:00",
+        accountIds: ["acct-1"],
+      },
+      validAccountIds: ["acct-1"],
+      missedRunToday: false,
+      nextRunLocalIso: "2026-03-13T10:00:00+08:00",
+    });
+  });
+
+  test("unwraps missed-run run-now envelopes", async () => {
+    window.go = {
+      main: {
+        App: {
+          RunMissedWarmupNow: vi.fn().mockResolvedValue({
+            data: {
+              schedule: {
+                enabled: true,
+                localTime: "10:00",
+                accountIds: ["acct-1"],
+                lastRunLocalDate: "2026-03-12",
+              },
+              validAccountIds: ["acct-1"],
+              missedRunToday: false,
+              nextRunLocalIso: "2026-03-13T10:00:00+08:00",
+            },
+          }),
+        },
+      },
+    };
+
+    await expect(runMissedWarmupNowViaWails()).resolves.toEqual({
+      schedule: {
+        enabled: true,
+        localTime: "10:00",
+        accountIds: ["acct-1"],
+        lastRunLocalDate: "2026-03-12",
+      },
+      validAccountIds: ["acct-1"],
+      missedRunToday: false,
+      nextRunLocalIso: "2026-03-13T10:00:00+08:00",
     });
   });
 });

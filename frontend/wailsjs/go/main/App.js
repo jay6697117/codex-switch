@@ -14,6 +14,10 @@ export function DeleteAccount(arg1) {
   return window['go']['main']['App']['DeleteAccount'](arg1);
 }
 
+export function DismissMissedRunToday() {
+  return window['go']['main']['App']['DismissMissedRunToday']();
+}
+
 export function GetAccountUsage(arg1) {
   return window['go']['main']['App']['GetAccountUsage'](arg1);
 }
@@ -40,6 +44,10 @@ export function RefreshAllUsage() {
 
 export function RenameAccount(arg1) {
   return window['go']['main']['App']['RenameAccount'](arg1);
+}
+
+export function RunMissedWarmupNow() {
+  return window['go']['main']['App']['RunMissedWarmupNow']();
 }
 
 export function SaveWarmupSchedule(arg1) {

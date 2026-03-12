@@ -9,10 +9,12 @@ import type {
   WarmupScheduleStatus,
 } from "../../lib/contracts";
 import type { AppServices } from "../../lib/wails/services";
+import type { WarmupShellFeedback } from "./feedback";
 
 interface WarmupSectionProps {
   accounts: AccountSummary[];
   services: Pick<AppServices, "warmup">;
+  feedback?: WarmupShellFeedback | null;
 }
 
 interface FormState {
@@ -64,12 +66,13 @@ function formatNextRun(
   return `${year}-${month}-${day} ${hour}:${minute}`;
 }
 
-export function WarmupSection({ accounts, services }: WarmupSectionProps) {
+export function WarmupSection({ accounts, services, feedback }: WarmupSectionProps) {
   const { i18n, t } = useTranslation(["errors", "warmup"]);
   const [status, setStatus] = useState<WarmupScheduleStatus | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [promptAction, setPromptAction] = useState<"run" | "skip" | null>(null);
   const [formState, setFormState] = useState<FormState>(deriveInitialFormState());
   const [validationCode, setValidationCode] = useState<string | null>(null);
 
@@ -113,6 +116,7 @@ export function WarmupSection({ accounts, services }: WarmupSectionProps) {
 
   const selectedCount = status?.schedule?.accountIds.length ?? 0;
   const nextRunLabel = formatNextRun(status?.nextRunLocalIso, i18n.language);
+  const showMissedPrompt = Boolean(status?.missedRunToday) && !dialogOpen;
 
   const openDialog = () => {
     setFormState(deriveInitialFormState(status ?? undefined));
@@ -169,6 +173,34 @@ export function WarmupSection({ accounts, services }: WarmupSectionProps) {
     }
   };
 
+  const dismissMissedPrompt = async () => {
+    setPromptAction("skip");
+    try {
+      const nextStatus = await services.warmup.dismissMissedRunToday();
+      setStatus(nextStatus);
+      setFormState(deriveInitialFormState(nextStatus));
+      setErrorCode(null);
+    } catch (error) {
+      setErrorCode(getErrorCode(error, "warmup.schedule_load_failed"));
+    } finally {
+      setPromptAction(null);
+    }
+  };
+
+  const runMissedWarmupNow = async () => {
+    setPromptAction("run");
+    try {
+      const nextStatus = await services.warmup.runMissedWarmupNow();
+      setStatus(nextStatus);
+      setFormState(deriveInitialFormState(nextStatus));
+      setErrorCode(null);
+    } catch (error) {
+      setErrorCode(getErrorCode(error, "warmup.execute_failed"));
+    } finally {
+      setPromptAction(null);
+    }
+  };
+
   return (
     <>
       <SectionCard title={t("warmup:scheduleTitle")}>
@@ -187,6 +219,13 @@ export function WarmupSection({ accounts, services }: WarmupSectionProps) {
               <strong>{nextRunLabel}</strong>
             </div>
           </div>
+
+          {feedback ? (
+            <div className={`warmup-result-panel warmup-result-${feedback.recent.tone}`}>
+              <strong>{feedback.recent.title}</strong>
+              <p>{feedback.recent.body}</p>
+            </div>
+          ) : null}
 
           {errorCode ? <p className="accounts-error-banner">{t(`errors:${errorCode}`)}</p> : null}
 
@@ -295,6 +334,46 @@ export function WarmupSection({ accounts, services }: WarmupSectionProps) {
                 type="button"
               >
                 {saving ? t("warmup:savingAction") : t("warmup:saveAction")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showMissedPrompt ? (
+        <div className="dialog-backdrop" role="presentation">
+          <div
+            aria-labelledby="warmup-missed-title"
+            aria-modal="true"
+            className="switch-dialog warmup-missed-dialog"
+            role="dialog"
+          >
+            <h3 id="warmup-missed-title">{t("warmup:missedPromptTitle")}</h3>
+            <p>{t("warmup:missedPromptBody")}</p>
+            <div className="switch-dialog-actions">
+              <button
+                className="secondary-button"
+                disabled={promptAction !== null}
+                onClick={() => {
+                  void dismissMissedPrompt();
+                }}
+                type="button"
+              >
+                {promptAction === "skip"
+                  ? t("warmup:missedPromptSkippingToday")
+                  : t("warmup:missedPromptSkipToday")}
+              </button>
+              <button
+                className="primary-button"
+                disabled={promptAction !== null}
+                onClick={() => {
+                  void runMissedWarmupNow();
+                }}
+                type="button"
+              >
+                {promptAction === "run"
+                  ? t("warmup:missedPromptRunningNow")
+                  : t("warmup:missedPromptRunNow")}
               </button>
             </div>
           </div>

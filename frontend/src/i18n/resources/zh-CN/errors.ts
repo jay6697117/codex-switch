@@ -25,6 +25,7 @@ export const errors = {
   "warmup.schedule_load_failed": "加载每日 warm-up 计划失败。",
   "warmup.schedule_time_invalid": "请输入有效的本地执行时间。",
   "warmup.schedule_accounts_required": "至少选择一个参与每日计划的账号。",
+  "warmup.schedule_disabled": "当前未启用每日 warm-up 计划。",
   "warmup.execute_failed": "执行 warm-up 操作失败。",
   "warmup.account_not_found": "要 warm-up 的账号已不存在。",
   "warmup.credentials_missing": "该账号缺少可用于手动 warm-up 的有效凭据。",

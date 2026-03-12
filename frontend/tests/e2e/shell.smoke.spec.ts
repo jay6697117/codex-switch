@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
+    const initialMissedRunToday = new URL(window.location.href).searchParams.get("missedPrompt");
     const accounts = [
       {
         id: "acc-active",
@@ -11,6 +12,9 @@ test.beforeEach(async ({ page }) => {
         createdAt: "2026-03-11T08:00:00Z",
         updatedAt: "2026-03-11T08:00:00Z",
         lastUsedAt: "2026-03-11T08:10:00Z",
+        warmupAvailability: {
+          isAvailable: true,
+        },
       },
       {
         id: "acc-side",
@@ -19,6 +23,10 @@ test.beforeEach(async ({ page }) => {
         authKind: "apiKey",
         createdAt: "2026-03-11T08:00:00Z",
         updatedAt: "2026-03-11T08:00:00Z",
+        warmupAvailability: {
+          isAvailable: false,
+          reasonCode: "warmup.unsupported_auth_kind",
+        },
       },
     ];
 
@@ -26,6 +34,17 @@ test.beforeEach(async ({ page }) => {
     const switchCalls: Array<{ accountId: string; confirmRestart: boolean }> = [];
     const browserOpens: string[] = [];
     const usageRefreshes: string[] = [];
+    const eventHandlers = new Map<string, Array<(payload: unknown) => void>>();
+    let warmupScheduleStatus = {
+      schedule: {
+        enabled: true,
+        localTime: "09:30",
+        accountIds: ["acc-active"],
+      },
+      validAccountIds: ["acc-active"],
+      missedRunToday: initialMissedRunToday === "1",
+      nextRunLocalIso: "2026-03-12T09:30:00+08:00",
+    };
     let usageItems = [
       {
         accountId: "acc-active",
@@ -51,13 +70,31 @@ test.beforeEach(async ({ page }) => {
       },
     ];
 
+    const emitRuntimeEvent = (eventName: string, payload: unknown) => {
+      const handlers = eventHandlers.get(eventName) ?? [];
+      handlers.forEach((handler) => handler(payload));
+    };
+
     Object.assign(window, {
       __switchCalls: switchCalls,
       __browserOpens: browserOpens,
       __usageRefreshes: usageRefreshes,
+      __emitWarmupEvent: (payload: unknown) => emitRuntimeEvent("warmup:scheduledResult", payload),
       runtime: {
         BrowserOpenURL: (url: string) => {
           browserOpens.push(url);
+        },
+        EventsOn: (eventName: string, callback: (payload: unknown) => void) => {
+          const current = eventHandlers.get(eventName) ?? [];
+          current.push(callback);
+          eventHandlers.set(eventName, current);
+
+          return () => {
+            const next = (eventHandlers.get(eventName) ?? []).filter(
+              (handler) => handler !== callback,
+            );
+            eventHandlers.set(eventName, next);
+          };
         },
       },
       go: {
@@ -146,6 +183,9 @@ test.beforeEach(async ({ page }) => {
                 authKind: "chatgpt",
                 createdAt: "2026-03-11T09:00:00Z",
                 updatedAt: "2026-03-11T09:00:00Z",
+                warmupAvailability: {
+                  isAvailable: true,
+                },
               });
               usageItems = [
                 ...usageItems,
@@ -179,6 +219,85 @@ test.beforeEach(async ({ page }) => {
                 items: usageItems,
               },
             }),
+            LoadWarmupScheduleStatus: async () => ({
+              data: warmupScheduleStatus,
+            }),
+            SaveWarmupSchedule: async (input: {
+              enabled: boolean;
+              localTime: string;
+              accountIds: string[];
+            }) => {
+              warmupScheduleStatus = {
+                schedule: {
+                  enabled: input.enabled,
+                  localTime: input.localTime,
+                  accountIds: input.accountIds,
+                },
+                validAccountIds: input.accountIds,
+                missedRunToday: false,
+                nextRunLocalIso: `2026-03-13T${input.localTime}:00+08:00`,
+              };
+
+              return {
+                data: warmupScheduleStatus,
+              };
+            },
+            DismissMissedRunToday: async () => {
+              warmupScheduleStatus = {
+                ...warmupScheduleStatus,
+                missedRunToday: false,
+                schedule: warmupScheduleStatus.schedule
+                  ? {
+                      ...warmupScheduleStatus.schedule,
+                      lastMissedPromptLocalDate: "2026-03-12",
+                    }
+                  : undefined,
+              };
+
+              return {
+                data: warmupScheduleStatus,
+              };
+            },
+            RunMissedWarmupNow: async () => {
+              warmupScheduleStatus = {
+                ...warmupScheduleStatus,
+                missedRunToday: false,
+                schedule: warmupScheduleStatus.schedule
+                  ? {
+                      ...warmupScheduleStatus.schedule,
+                      lastRunLocalDate: "2026-03-12",
+                    }
+                  : undefined,
+              };
+
+              emitRuntimeEvent("warmup:scheduledResult", {
+                trigger: "missed_prompt",
+                completedAt: "2026-03-12T10:00:00+08:00",
+                result: {
+                  items: [
+                    {
+                      accountId: "acc-active",
+                      status: "success",
+                      completedAt: "2026-03-12T10:00:00+08:00",
+                      availability: {
+                        isAvailable: true,
+                      },
+                    },
+                  ],
+                  summary: {
+                    totalAccounts: 1,
+                    eligibleAccounts: 1,
+                    successfulAccounts: 1,
+                    failedAccounts: 0,
+                    skippedAccounts: 0,
+                  },
+                },
+              });
+
+              return {
+                data: warmupScheduleStatus,
+              };
+            },
           },
         },
       },
@@ -246,4 +365,45 @@ test("supports oauth add-account flow and usage refresh from the shell", async (
       () => (window as typeof window & { __usageRefreshes: string[] }).__usageRefreshes,
     ),
   ).resolves.toContain("acc-active");
+});
+
+test("surfaces scheduled runtime events through localized shell feedback", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Codex Switcher" })).toBeVisible();
+  await expect(page.getByText("每日 warm-up 计划")).toBeVisible();
+
+  await page.evaluate(() => {
+    (
+      window as typeof window & {
+        __emitWarmupEvent: (payload: unknown) => void;
+      }
+    ).__emitWarmupEvent({
+      trigger: "scheduled",
+      completedAt: "2026-03-12T09:45:00+08:00",
+      result: {
+        items: [],
+        summary: {
+          totalAccounts: 1,
+          eligibleAccounts: 1,
+          successfulAccounts: 1,
+          failedAccounts: 0,
+          skippedAccounts: 0,
+        },
+      },
+    });
+  });
+
+  await expect(page.getByText("已为全部 1 个可用账号发送定时 warm-up 请求。")).toBeVisible();
+  await expect(page.getByText("最近一次定时 warm-up")).toBeVisible();
+});
+
+test("shows missed-run recovery and keeps shell feedback in sync after run-now", async ({ page }) => {
+  await page.goto("/?missedPrompt=1");
+
+  await expect(page.getByRole("dialog", { name: "错过了今日定时 warm-up" })).toBeVisible();
+  await page.getByRole("button", { name: "立即补跑" }).click();
+
+  await expect(page.getByRole("dialog", { name: "错过了今日定时 warm-up" })).toHaveCount(0);
+  await expect(page.getByText("已为全部 1 个可用账号发送补跑 warm-up 请求。")).toBeVisible();
+  await expect(page.getByText("最近一次补跑 warm-up")).toBeVisible();
 });

@@ -25,6 +25,7 @@ export const errors = {
   "warmup.schedule_load_failed": "Unable to load the daily warm-up schedule.",
   "warmup.schedule_time_invalid": "Enter a valid local time for the daily schedule.",
   "warmup.schedule_accounts_required": "Select at least one account for the daily schedule.",
+  "warmup.schedule_disabled": "The daily warm-up schedule is disabled.",
   "warmup.execute_failed": "Unable to run the requested warm-up action.",
   "warmup.account_not_found": "The account requested for warm-up no longer exists.",
   "warmup.credentials_missing": "This account does not have usable credentials for manual warm-up.",

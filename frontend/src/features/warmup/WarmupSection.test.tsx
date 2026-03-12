@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
@@ -74,6 +74,20 @@ function buildWarmupService(
         nextRunLocalIso: `2026-03-12T${input.localTime}:00+08:00`,
       }),
     ),
+    dismissMissedRunToday: vi.fn().mockResolvedValue({
+      ...status,
+      missedRunToday: false,
+    }),
+    runMissedWarmupNow: vi.fn().mockResolvedValue({
+      ...status,
+      missedRunToday: false,
+      schedule: status.schedule
+        ? {
+            ...status.schedule,
+            lastRunLocalDate: "2026-03-12",
+          }
+        : undefined,
+    }),
   };
 }
 
@@ -144,5 +158,69 @@ describe("WarmupSection", () => {
     expect(within(summary).getByText("1")).toBeInTheDocument();
     expect(within(summary).getByText("2026-03-12 08:30")).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Configure daily warm-up" })).not.toBeInTheDocument();
+  });
+
+  test("shows the missed-run prompt and dismisses it for today through the typed facade", async () => {
+    const status = buildStatus({
+      missedRunToday: true,
+    });
+    const service = buildWarmupService(status);
+    const { user } = await renderWarmupSection(service);
+
+    expect(await screen.findByRole("dialog", { name: "Missed scheduled warm-up" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Skip Today" }));
+
+    expect(service.dismissMissedRunToday).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Missed scheduled warm-up" })).not.toBeInTheDocument();
+    });
+  });
+
+  test("runs the missed warm-up now through the typed facade", async () => {
+    const status = buildStatus({
+      missedRunToday: true,
+    });
+    const service = buildWarmupService(status);
+    const { user } = await renderWarmupSection(service);
+
+    expect(await screen.findByRole("dialog", { name: "Missed scheduled warm-up" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Run Warmup Now" }));
+
+    expect(service.runMissedWarmupNow).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Missed scheduled warm-up" })).not.toBeInTheDocument();
+    });
+  });
+
+  test("shows the prompt again when a later load reports another missed day", async () => {
+    const initialStatus = buildStatus({
+      missedRunToday: true,
+    });
+    const firstService = buildWarmupService(initialStatus);
+    const firstRender = await renderWarmupSection(firstService);
+
+    expect(await screen.findByRole("dialog", { name: "Missed scheduled warm-up" })).toBeInTheDocument();
+    await firstRender.user.click(screen.getByRole("button", { name: "Skip Today" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Missed scheduled warm-up" })).not.toBeInTheDocument();
+    });
+
+    const laterService = buildWarmupService(
+      buildStatus({
+        missedRunToday: true,
+        schedule: {
+          enabled: true,
+          localTime: "07:45",
+          accountIds: ["acct-work", "acct-side"],
+          lastMissedPromptLocalDate: "2026-03-12",
+        },
+      }),
+    );
+    const laterRender = await renderWarmupSection(laterService);
+
+    expect(await screen.findByRole("dialog", { name: "Missed scheduled warm-up" })).toBeInTheDocument();
+    await laterRender.user.click(screen.getByRole("button", { name: "Skip Today" }));
+    expect(laterService.dismissMissedRunToday).toHaveBeenCalledTimes(1);
   });
 });
