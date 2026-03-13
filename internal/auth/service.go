@@ -385,7 +385,7 @@ func (s *LocalStarter) Start(_ context.Context, _ string) (contracts.OAuthLoginI
 	}
 
 	callbackPort := listener.Addr().(*net.TCPAddr).Port
-	redirectURI := fmt.Sprintf("http://127.0.0.1:%d/auth/callback", callbackPort)
+	redirectURI := fmt.Sprintf("http://localhost:%d/auth/callback", callbackPort)
 	info := contracts.OAuthLoginInfo{
 		AuthURL:      buildAuthorizeURL(s.issuerURL, s.clientID, redirectURI, pkce.challenge, state),
 		CallbackPort: callbackPort,
