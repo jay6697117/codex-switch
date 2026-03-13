@@ -256,6 +256,20 @@ export namespace contracts {
 	        this.passphrase = source["passphrase"];
 	    }
 	}
+	export class ImportFromFileInput {
+	    accountName: string;
+	    filePath: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ImportFromFileInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountName = source["accountName"];
+	        this.filePath = source["filePath"];
+	    }
+	}
 	export class ImportFullBackupInput {
 	    path: string;
 	    passphrase?: string;

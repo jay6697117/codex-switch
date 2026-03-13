@@ -43,6 +43,8 @@ describe("AppShell", () => {
         start: vi.fn(),
         complete: vi.fn(),
         cancel: vi.fn(),
+        selectAuthFilePath: vi.fn(),
+        importFromFile: vi.fn(),
       },
       usage: {
         get: vi.fn(),
@@ -202,6 +204,8 @@ describe("AppShell", () => {
         start: vi.fn(),
         complete: vi.fn(),
         cancel: vi.fn(),
+        selectAuthFilePath: vi.fn(),
+        importFromFile: vi.fn(),
       },
       usage: {
         get: vi.fn(),

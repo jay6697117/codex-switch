@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { SectionCard } from "../../components/SectionCard";
-import { AddAccountModal, type OAuthPhase } from "../auth/AddAccountModal";
+import { AddAccountModal, type OAuthPhase, type ImportPhase } from "../auth/AddAccountModal";
 import { openBrowserUrl } from "../auth/browser";
 import { UsageSummary } from "../usage/UsageSummary";
 import type {
@@ -528,6 +528,8 @@ export function AccountSection({
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const [oauthPhase, setOAuthPhase] = useState<OAuthPhase>("idle");
   const [oauthAuthUrl, setOAuthAuthUrl] = useState<string | null>(null);
+  const [importPhase, setImportPhase] = useState<ImportPhase>("idle");
+  const [importFilePath, setImportFilePath] = useState<string | null>(null);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const applySnapshot = (nextSnapshot: AccountsSnapshot) => {
@@ -548,6 +550,8 @@ export function AccountSection({
     setAddAccountOpen(false);
     setOAuthPhase("idle");
     setOAuthAuthUrl(null);
+    setImportPhase("idle");
+    setImportFilePath(null);
   };
 
   const refreshProcessStatus = async (): Promise<ProcessStatus | null> => {
@@ -877,6 +881,57 @@ export function AccountSection({
     }
   };
 
+  const handleSelectAuthFile = async () => {
+    try {
+      const result = await services.oauth.selectAuthFilePath();
+      if (result.selected && result.path) {
+        setImportFilePath(result.path);
+        setErrorCode(null);
+      }
+    } catch (error) {
+      setErrorCode(getErrorCode(error, "auth.import_failed"));
+    }
+  };
+
+  const handleImportFromFile = async (accountName: string) => {
+    const normalizedName = accountName.trim();
+    if (!normalizedName) {
+      setErrorCode("oauth.name_required");
+      return;
+    }
+
+    if (!importFilePath) {
+      setErrorCode("auth.file_invalid");
+      return;
+    }
+
+    setImportPhase("importing");
+    setSectionFeedback(null);
+    setErrorCode(null);
+
+    try {
+      const result = await services.oauth.importFromFile({
+        accountName: normalizedName,
+        filePath: importFilePath,
+      });
+      applySnapshot(result.data);
+      await Promise.all([refreshProcessStatus(), refreshAllUsage(result.data)]);
+      const successMessage = translateAppMessage(result.message, t);
+      if (successMessage) {
+        setSectionFeedback({
+          message: successMessage,
+          tone: "success",
+        });
+      }
+      setErrorCode(null);
+      resetOAuthState();
+    } catch (error) {
+      setImportPhase("idle");
+      setSectionFeedback(null);
+      setErrorCode(getErrorCode(error, "auth.import_failed"));
+    }
+  };
+
   const handleWarmupAccount = async (account: AccountSummary) => {
     if (!account.warmupAvailability.isAvailable) {
       return;
@@ -1148,11 +1203,15 @@ export function AccountSection({
       <AddAccountModal
         authUrl={oauthAuthUrl}
         errorCode={errorCode}
+        importFilePath={importFilePath}
+        importPhase={importPhase}
         isOpen={addAccountOpen}
         onCancel={handleCancelOAuthLogin}
         onClose={handleCloseAddAccount}
         onComplete={handleCompleteOAuthLogin}
+        onImportFile={handleImportFromFile}
         onOpenBrowserAgain={handleOpenBrowserAgain}
+        onSelectFile={handleSelectAuthFile}
         onStart={handleStartOAuthLogin}
         phase={oauthPhase}
       />

@@ -6,6 +6,7 @@ import type {
   BackupImportSummary,
   ExportFullBackupInput,
   BootstrapPayload,
+  ImportFromFileInput,
   ImportFullBackupInput,
   MessageResult,
   OAuthCancelResult,
@@ -195,6 +196,28 @@ export async function cancelOAuthLoginViaWails(): Promise<OAuthCancelResult> {
   }
 
   return unwrapEnvelope(await cancelOAuthLogin(), "oauth.cancel_failed");
+}
+
+export async function selectAuthFilePathViaWails(): Promise<PathSelectionResult> {
+  const selectAuthFilePath = window.go?.main?.App?.SelectAuthFilePath;
+
+  if (!selectAuthFilePath) {
+    throw { code: "auth.import_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelope(await selectAuthFilePath(), "auth.import_failed");
+}
+
+export async function importAccountFromFileViaWails(
+  input: ImportFromFileInput,
+): Promise<MessageResult<AccountsSnapshot>> {
+  const importAccountFromFile = window.go?.main?.App?.ImportAccountFromFile;
+
+  if (!importAccountFromFile) {
+    throw { code: "auth.import_failed" } satisfies AppError;
+  }
+
+  return unwrapEnvelopeWithMessage(await importAccountFromFile(input), "auth.import_failed");
 }
 
 export async function getAccountUsageViaWails(

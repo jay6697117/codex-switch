@@ -4,6 +4,7 @@ import type {
   BackupImportSummary,
   BootstrapPayload,
   ExportFullBackupInput,
+  ImportFromFileInput,
   ImportFullBackupInput,
   OAuthCancelResult,
   OAuthLoginInfo,
@@ -72,6 +73,10 @@ declare global {
           ) => Promise<ResultEnvelope<OAuthLoginInfo>>;
           CompleteOAuthLogin?: () => Promise<ResultEnvelope<AccountsSnapshot>>;
           CancelOAuthLogin?: () => Promise<ResultEnvelope<OAuthCancelResult>>;
+          SelectAuthFilePath?: () => Promise<ResultEnvelope<PathSelectionResult>>;
+          ImportAccountFromFile?: (
+            input: ImportFromFileInput,
+          ) => Promise<ResultEnvelope<AccountsSnapshot>>;
           SwitchAccount?: (
             input: SwitchAccountInput,
           ) => Promise<ResultEnvelope<SwitchAccountResult>>;

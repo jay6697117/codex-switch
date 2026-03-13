@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -185,6 +186,117 @@ func (s *Service) CancelLogin(context.Context) error {
 	s.pending.login.Cancel()
 	s.pending = nil
 	return nil
+}
+
+// ImportFromFile 从 auth.json 文件导入账户
+func (s *Service) ImportFromFile(ctx context.Context, input contracts.ImportFromFileInput) (contracts.AccountsSnapshot, error) {
+	normalizedName := strings.TrimSpace(input.AccountName)
+	if normalizedName == "" {
+		return contracts.AccountsSnapshot{}, contracts.AppError{Code: "oauth.name_required"}
+	}
+
+	filePath := strings.TrimSpace(input.FilePath)
+	if filePath == "" {
+		return contracts.AccountsSnapshot{}, contracts.AppError{Code: "auth.file_invalid"}
+	}
+
+	// 读取并解析 auth.json 文件
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return contracts.AccountsSnapshot{}, contracts.AppError{Code: "auth.import_failed"}
+	}
+
+	var authFile switching.AuthFile
+	if err := json.Unmarshal(content, &authFile); err != nil {
+		return contracts.AccountsSnapshot{}, contracts.AppError{Code: "auth.file_invalid"}
+	}
+
+	// 判断文件中包含的认证类型
+	hasChatGPTTokens := authFile.Tokens != nil && authFile.Tokens.RefreshToken != ""
+	hasAPIKey := authFile.OpenAIAPIKey != nil && *authFile.OpenAIAPIKey != ""
+
+	if !hasChatGPTTokens && !hasAPIKey {
+		return contracts.AccountsSnapshot{}, contracts.AppError{Code: "auth.file_empty"}
+	}
+
+	store, err := s.repository.Load(ctx)
+	if err != nil {
+		return contracts.AccountsSnapshot{}, contracts.AppError{Code: "auth.import_failed"}
+	}
+
+	// 检查名称冲突
+	for _, account := range store.Accounts {
+		if account.DisplayName == normalizedName {
+			return contracts.AccountsSnapshot{}, contracts.AppError{Code: "account.name_conflict"}
+		}
+	}
+
+	now := s.now()
+	account := accounts.AccountRecord{
+		ID:          s.idGenerator(),
+		DisplayName: normalizedName,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		LastUsedAt:  &now,
+	}
+
+	if hasChatGPTTokens {
+		// ChatGPT token 认证
+		account.Auth = accounts.AccountAuth{
+			Kind: "chatgpt",
+			ChatGPT: &accounts.ChatGPTCredentials{
+				IDToken:      authFile.Tokens.IDToken,
+				AccessToken:  authFile.Tokens.AccessToken,
+				RefreshToken: authFile.Tokens.RefreshToken,
+				AccountID:    copyString(authFile.Tokens.AccountID),
+			},
+		}
+
+		// 尝试从 ID Token 中解析 email
+		email, _ := parseIDTokenClaims(authFile.Tokens.IDToken)
+		if email != nil {
+			account.Email = *email
+		}
+	} else {
+		// API Key 认证
+		account.Auth = accounts.AccountAuth{
+			Kind: "apiKey",
+			APIKey: &accounts.APIKeyCredentials{
+				APIKey: *authFile.OpenAIAPIKey,
+			},
+		}
+	}
+
+	// 备份当前 auth 文件
+	previousAuth, err := s.authStore.ReadCurrent(ctx)
+	if err != nil {
+		return contracts.AccountsSnapshot{}, contracts.AppError{Code: "auth.import_failed"}
+	}
+
+	store.Accounts = append(store.Accounts, account)
+	store.ActiveAccountID = stringValuePointer(account.ID)
+
+	// 将 auth.json 写入 Codex home 目录
+	if hasChatGPTTokens {
+		if err := s.authStore.Write(ctx, buildChatGPTAuthFile(account, now)); err != nil {
+			return contracts.AccountsSnapshot{}, contracts.AppError{Code: "auth.import_failed"}
+		}
+	} else {
+		apiKeyValue := *authFile.OpenAIAPIKey
+		if err := s.authStore.Write(ctx, switching.AuthFile{
+			OpenAIAPIKey: &apiKeyValue,
+		}); err != nil {
+			return contracts.AccountsSnapshot{}, contracts.AppError{Code: "auth.import_failed"}
+		}
+	}
+
+	// 保存 accounts 仓库
+	if err := s.repository.Save(ctx, store); err != nil {
+		_ = s.authStore.Restore(ctx, previousAuth)
+		return contracts.AccountsSnapshot{}, contracts.AppError{Code: "auth.import_failed"}
+	}
+
+	return accounts.SnapshotFromStore(store), nil
 }
 
 type LocalStarterConfig struct {

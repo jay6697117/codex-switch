@@ -18,6 +18,8 @@ export function GetAccountUsage(arg1:string):Promise<contracts.ResultEnvelope_co
 
 export function GetProcessStatus():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_ProcessStatus_>;
 
+export function ImportAccountFromFile(arg1:contracts.ImportFromFileInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_AccountsSnapshot_>;
+
 export function ImportFullBackup(arg1:contracts.ImportFullBackupInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_BackupImportSummary_>;
 
 export function ImportSlimText(arg1:string):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_BackupImportSummary_>;
@@ -39,6 +41,8 @@ export function RunMissedWarmupNow():Promise<contracts.ResultEnvelope_codex_swit
 export function SaveSettings(arg1:contracts.SaveSettingsInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_SettingsSnapshot_>;
 
 export function SaveWarmupSchedule(arg1:contracts.WarmupScheduleInput):Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_WarmupScheduleStatus_>;
+
+export function SelectAuthFilePath():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_PathSelectionResult_>;
 
 export function SelectFullExportPath():Promise<contracts.ResultEnvelope_codex_switch_internal_contracts_PathSelectionResult_>;
 

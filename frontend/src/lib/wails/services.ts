@@ -4,6 +4,7 @@ import type {
   BackupImportSummary,
   BootstrapPayload,
   ExportFullBackupInput,
+  ImportFromFileInput,
   ImportFullBackupInput,
   MessageResult,
   PathSelectionResult,
@@ -30,6 +31,7 @@ import {
   exportFullBackupViaWails,
   exportSlimTextViaWails,
   getAccountUsageViaWails,
+  importAccountFromFileViaWails,
   importFullBackupViaWails,
   importSlimTextViaWails,
   loadSettingsViaWails,
@@ -41,6 +43,7 @@ import {
   renameAccountViaWails,
   saveWarmupScheduleViaWails,
   saveSettingsViaWails,
+  selectAuthFilePathViaWails,
   selectFullExportPathViaWails,
   selectFullImportPathViaWails,
   startOAuthLoginViaWails,
@@ -79,6 +82,8 @@ export interface OAuthService {
   start(input: StartOAuthLoginInput): Promise<OAuthLoginInfo>;
   complete(): Promise<MessageResult<AccountsSnapshot>>;
   cancel(): Promise<OAuthCancelResult>;
+  selectAuthFilePath(): Promise<PathSelectionResult>;
+  importFromFile(input: ImportFromFileInput): Promise<MessageResult<AccountsSnapshot>>;
 }
 
 export interface UsageService {
@@ -138,6 +143,8 @@ export function createAppServices(): AppServices {
       start: startOAuthLoginViaWails,
       complete: completeOAuthLoginViaWails,
       cancel: cancelOAuthLoginViaWails,
+      selectAuthFilePath: selectAuthFilePathViaWails,
+      importFromFile: importAccountFromFileViaWails,
     },
     usage: {
       get: getAccountUsageViaWails,

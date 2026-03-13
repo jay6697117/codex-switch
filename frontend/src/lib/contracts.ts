@@ -64,6 +64,11 @@ export interface StartOAuthLoginInput {
   accountName: string;
 }
 
+export interface ImportFromFileInput {
+  accountName: string;
+  filePath: string;
+}
+
 export interface OAuthLoginInfo {
   authUrl: string;
   callbackPort: number;

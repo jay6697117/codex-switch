@@ -34,6 +34,10 @@ export function GetProcessStatus() {
   return window['go']['main']['App']['GetProcessStatus']();
 }
 
+export function ImportAccountFromFile(arg1) {
+  return window['go']['main']['App']['ImportAccountFromFile'](arg1);
+}
+
 export function ImportFullBackup(arg1) {
   return window['go']['main']['App']['ImportFullBackup'](arg1);
 }
@@ -76,6 +80,10 @@ export function SaveSettings(arg1) {
 
 export function SaveWarmupSchedule(arg1) {
   return window['go']['main']['App']['SaveWarmupSchedule'](arg1);
+}
+
+export function SelectAuthFilePath() {
+  return window['go']['main']['App']['SelectAuthFilePath']();
 }
 
 export function SelectFullExportPath() {

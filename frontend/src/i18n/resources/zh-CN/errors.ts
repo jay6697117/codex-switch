@@ -51,4 +51,7 @@ export const errors = {
   "switch.auth_write_failed": "无法为目标账号重写 auth.json。",
   "switch.active_update_failed": "账号切换事务未能完成。",
   "switch.rollback_failed": "切换失败，且回滚没有完全成功。",
+  "auth.import_failed": "导入 auth.json 文件失败。",
+  "auth.file_invalid": "所选文件不是有效的 auth.json 文件。",
+  "auth.file_empty": "所选文件不包含任何可用凭据。",
 };

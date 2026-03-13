@@ -51,4 +51,7 @@ export const errors = {
   "switch.auth_write_failed": "Unable to rewrite auth.json for the selected account.",
   "switch.active_update_failed": "Unable to finish the account switch transaction.",
   "switch.rollback_failed": "The switch failed and the rollback could not complete cleanly.",
+  "auth.import_failed": "Unable to import the selected auth.json file.",
+  "auth.file_invalid": "The selected file is not a valid auth.json file.",
+  "auth.file_empty": "The selected file does not contain any usable credentials.",
 };

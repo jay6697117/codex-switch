@@ -217,6 +217,8 @@ function createServices(options?: {
       start: vi.fn().mockResolvedValue(oauthStartResult),
       complete: vi.fn().mockResolvedValue(oauthCompleteEnvelope),
       cancel: vi.fn().mockResolvedValue({ pending: false }),
+      selectAuthFilePath: vi.fn().mockResolvedValue({ selected: false }),
+      importFromFile: vi.fn(),
     },
     usage: {
       get: vi.fn(async (accountId: string) => usageById[accountId]),
@@ -576,7 +578,7 @@ describe("AccountSection", () => {
     await user.click(screen.getByRole("button", { name: "Add account" }));
 
     expect(await screen.findByRole("dialog", { name: "Add account" })).toBeInTheDocument();
-    expect(screen.queryByText("Import File")).not.toBeInTheDocument();
+    expect(screen.getByText("Import File")).toBeInTheDocument();
 
     await user.type(screen.getByRole("textbox", { name: "New account name" }), "New OAuth Account");
     await user.click(screen.getByRole("button", { name: "Start browser login" }));

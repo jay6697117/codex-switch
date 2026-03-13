@@ -198,6 +198,58 @@ func (a *App) CancelOAuthLogin() contracts.ResultEnvelope[contracts.OAuthCancelR
 	return wrapResult(contracts.OAuthCancelResult{Pending: false}, err, "oauth.cancel_failed")
 }
 
+// SelectAuthFilePath 打开文件选择对话框，仅允许选择 JSON 文件
+func (a *App) SelectAuthFilePath() contracts.ResultEnvelope[contracts.PathSelectionResult] {
+	if a.ctx == nil {
+		return wrapResult(
+			contracts.PathSelectionResult{},
+			contracts.AppError{Code: "auth.import_failed"},
+			"auth.import_failed",
+		)
+	}
+
+	dialogCopy := a.authFileDialogCopy(a.requestContext())
+	path, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
+		Title: dialogCopy.Title,
+		Filters: []wailsruntime.FileFilter{
+			{
+				DisplayName: dialogCopy.FilterLabel,
+				Pattern:     "*.json",
+			},
+		},
+	})
+	if err != nil {
+		return wrapResult(
+			contracts.PathSelectionResult{},
+			contracts.AppError{Code: "auth.import_failed"},
+			"auth.import_failed",
+		)
+	}
+	if path == "" {
+		return wrapResult(contracts.PathSelectionResult{Selected: false}, nil, "auth.import_failed")
+	}
+
+	return wrapResult(
+		contracts.PathSelectionResult{Selected: true, Path: stringPointer(path)},
+		nil,
+		"auth.import_failed",
+	)
+}
+
+// ImportAccountFromFile 从 auth.json 文件导入账户
+func (a *App) ImportAccountFromFile(input contracts.ImportFromFileInput) contracts.ResultEnvelope[contracts.AccountsSnapshot] {
+	snapshot, err := a.authService.ImportFromFile(a.requestContext(), input)
+	if err == nil {
+		snapshot = a.decorateAccountsSnapshot(snapshot)
+	}
+	return wrapResultWithMessage(
+		snapshot,
+		successMessage("auth.account_added", activeAccountMessageArgs(snapshot)),
+		err,
+		"auth.import_failed",
+	)
+}
+
 func (a *App) GetAccountUsage(accountID string) contracts.ResultEnvelope[contracts.AccountUsageSnapshot] {
 	snapshot, err := a.usageService.GetAccountUsage(a.requestContext(), accountID)
 	return wrapResult(snapshot, err, "usage.load_failed")
@@ -471,6 +523,32 @@ func (a *App) fullBackupDialogCopy(ctx context.Context) fullBackupDialogCopy {
 		ExportTitle: "Export Full Encrypted Backup",
 		ImportTitle: "Import Full Encrypted Backup",
 		FilterLabel: "Codex Switch Full Backup (*.cswf)",
+	}
+}
+
+type authFileDialogLabels struct {
+	Title       string
+	FilterLabel string
+}
+
+func (a *App) authFileDialogCopy(ctx context.Context) authFileDialogLabels {
+	locale := contracts.LocaleEnUS
+	if a.preferencesService != nil {
+		if settingsSnapshot, err := a.preferencesService.Load(ctx); err == nil {
+			locale = settingsSnapshot.EffectiveLocale
+		}
+	}
+
+	if locale == contracts.LocaleZhCN {
+		return authFileDialogLabels{
+			Title:       "选择 auth.json 文件",
+			FilterLabel: "JSON 文件 (*.json)",
+		}
+	}
+
+	return authFileDialogLabels{
+		Title:       "Select auth.json file",
+		FilterLabel: "JSON files (*.json)",
 	}
 }
 
