@@ -113,11 +113,10 @@ describe("AppShell", () => {
     render(<AppShell i18n={i18n} services={services} />);
 
     expect(await screen.findByText("Codex Switcher")).toBeInTheDocument();
-    expect(await screen.findByText("多账号管理器骨架")).toBeInTheDocument();
-    expect(await screen.findByText("账号工作区")).toBeInTheDocument();
+    expect(await screen.findByText("Multi-account manager for Codex CLI")).toBeInTheDocument();
     expect(await screen.findByText("每日 warm-up 计划")).toBeInTheDocument();
     expect(await screen.findByText("设置")).toBeInTheDocument();
-    expect(await screen.findByText("还没有账号")).toBeInTheDocument();
+    expect(await screen.findByText("No accounts yet")).toBeInTheDocument();
     expect(services.bootstrap.load).toHaveBeenCalledTimes(1);
     expect(services.accounts.load).toHaveBeenCalledTimes(1);
     expect(services.process.getStatus).toHaveBeenCalledTimes(1);

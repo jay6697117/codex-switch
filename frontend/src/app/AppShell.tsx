@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import type { i18n } from "i18next";
 
@@ -10,7 +10,7 @@ import type {
 } from "../lib/contracts";
 import type { AppServices } from "../lib/wails/services";
 import { applyBootstrapLocale } from "../i18n/createAppI18n";
-import { AccountSection } from "../features/accounts/AccountSection";
+import { AccountSection, type AccountSectionHandle } from "../features/accounts/AccountSection";
 import { SettingsSection } from "../features/settings/SettingsSection";
 import { WarmupSection } from "../features/warmup/WarmupSection";
 import {
@@ -18,7 +18,6 @@ import {
   type WarmupShellFeedback,
 } from "../features/warmup/feedback";
 import { CapabilityGrid } from "../features/shell/CapabilityGrid";
-import { ShellHero } from "../features/shell/ShellHero";
 
 interface AppShellProps {
   i18n: i18n;
@@ -36,7 +35,8 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [warmupFeedback, setWarmupFeedback] = useState<WarmupShellFeedback | null>(null);
   const [shellRevision, setShellRevision] = useState(0);
-  const { t } = useTranslation(["errors", "shell", "warmup"]);
+  const { t } = useTranslation(["errors", "shell", "warmup", "accounts", "auth", "usage"]);
+  const accountSectionRef = useRef<AccountSectionHandle>(null);
 
   useEffect(() => {
     let active = true;
@@ -80,7 +80,7 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
 
   if (errorCode) {
     return (
-      <main className="app-shell">
+      <main className="app-main">
         <section className="error-panel">{t(errorCode)}</section>
       </main>
     );
@@ -88,51 +88,130 @@ function AppShellContent({ i18n, services }: AppShellContentProps) {
 
   if (!bootstrap) {
     return (
-      <main className="app-shell">
+      <main className="app-main">
         <section className="loading-panel">{t("shell:loading")}</section>
       </main>
     );
   }
 
   return (
-    <main className="app-shell">
-      <ShellHero bootstrap={bootstrap} />
-      {warmupFeedback ? (
-        <section
-          className={`accounts-feedback-banner accounts-feedback-${warmupFeedback.toast.tone}`}
-        >
-          {warmupFeedback.toast.message}
-        </section>
-      ) : null}
-      <AccountSection
-        onSnapshotChange={(snapshot: AccountsSnapshot) => {
-          setAccounts(snapshot.accounts);
-        }}
-        onWarmupFeedback={setWarmupFeedback}
-        revision={shellRevision}
-        services={services}
+    <div className="min-h-screen">
+      {/* Sticky Header */}
+      <AppHeader
+        accountSectionRef={accountSectionRef}
+        hasAccounts={accounts.length > 0}
+        t={t}
       />
-      <WarmupSection accounts={accounts} feedback={warmupFeedback} services={services} />
-      <SettingsSection
-        onBackupImported={() => {
-          setShellRevision((current) => current + 1);
-        }}
-        onSettingsSaved={(settingsSnapshot) => {
-          void i18n.changeLanguage(settingsSnapshot.effectiveLocale);
-          setBootstrap((current) =>
-            current
-              ? {
-                  ...current,
-                  locale: settingsSnapshot.effectiveLocale,
-                  hasManualOverride: settingsSnapshot.localePreference !== "system",
-                }
-              : current,
-          );
-        }}
-        services={services}
-      />
-      <CapabilityGrid />
-    </main>
+
+      {/* Main Content */}
+      <main className="app-main">
+        {warmupFeedback ? (
+          <section
+            className={`accounts-feedback-banner accounts-feedback-${warmupFeedback.toast.tone}`}
+          >
+            {warmupFeedback.toast.message}
+          </section>
+        ) : null}
+        <div className="app-main-sections">
+          <AccountSection
+            ref={accountSectionRef}
+            onSnapshotChange={(snapshot: AccountsSnapshot) => {
+              setAccounts(snapshot.accounts);
+            }}
+            onWarmupFeedback={setWarmupFeedback}
+            revision={shellRevision}
+            services={services}
+          />
+          <WarmupSection accounts={accounts} feedback={warmupFeedback} services={services} />
+          <SettingsSection
+            onBackupImported={() => {
+              setShellRevision((current) => current + 1);
+            }}
+            onSettingsSaved={(settingsSnapshot) => {
+              void i18n.changeLanguage(settingsSnapshot.effectiveLocale);
+              setBootstrap((current) =>
+                current
+                  ? {
+                      ...current,
+                      locale: settingsSnapshot.effectiveLocale,
+                      hasManualOverride: settingsSnapshot.localePreference !== "system",
+                    }
+                  : current,
+              );
+            }}
+            services={services}
+          />
+          <CapabilityGrid />
+        </div>
+      </main>
+    </div>
+  );
+}
+
+/* ========================================
+   App Header（Sticky 顶部导航栏）
+   ======================================== */
+function AppHeader({
+  accountSectionRef,
+  hasAccounts,
+  t,
+}: {
+  accountSectionRef: React.RefObject<AccountSectionHandle | null>;
+  hasAccounts: boolean;
+  t: (key: string, options?: Record<string, unknown>) => string;
+}) {
+  return (
+    <header className="app-header">
+      <div className="app-header-inner">
+        <div className="header-brand">
+          <div className="header-logo">C</div>
+          <div className="header-brand-text">
+            <div className="header-title-row">
+              <h1>Codex Switcher</h1>
+              {accountSectionRef.current?.getProcessBadge() ?? null}
+            </div>
+            <p className="header-subtitle">Multi-account manager for Codex CLI</p>
+          </div>
+        </div>
+
+        <div className="header-actions">
+          <button
+            className="header-btn header-btn-secondary"
+            onClick={() => accountSectionRef.current?.toggleMaskAll()}
+            type="button"
+          >
+            <span className="header-btn-icon">
+              {accountSectionRef.current?.isAllMasked() ? t("accounts:showAll") : t("accounts:hideAll")}
+            </span>
+          </button>
+          <button
+            className="header-btn header-btn-secondary"
+            disabled={!hasAccounts}
+            onClick={() => accountSectionRef.current?.refreshAllUsage()}
+            type="button"
+          >
+            ↻ {t("usage:refreshAllAction")}
+          </button>
+          <button
+            className="header-btn header-btn-secondary"
+            disabled={!hasAccounts}
+            onClick={() => accountSectionRef.current?.warmupAll()}
+            type="button"
+          >
+            <span className="header-btn-icon">
+              <span>⚡</span> {t("warmup:runAllAction")}
+            </span>
+          </button>
+          <button
+            className="header-btn header-btn-primary"
+            onClick={() => accountSectionRef.current?.openAddAccount()}
+            type="button"
+          >
+            + {t("auth:addToolbarAction")}
+          </button>
+        </div>
+      </div>
+    </header>
   );
 }
 
