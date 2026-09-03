@@ -239,6 +239,8 @@ jobs:
             ${{ env.DMG_PATH }}
             ${{ env.CHECKSUMS_PATH }}
             ${{ env.RELEASE_NOTES_PATH }}
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Create or update GitHub release draft
         shell: bash
